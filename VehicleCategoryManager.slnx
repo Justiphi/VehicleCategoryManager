@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="VehicleCategoryManager/VehicleCategoryManager.Client/VehicleCategoryManager.Client.csproj" />
+  <Project Path="VehicleCategoryManager/VehicleCategoryManager/VehicleCategoryManager.csproj" />
+</Solution>
