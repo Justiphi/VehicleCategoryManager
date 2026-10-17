@@ -1,0 +1,134 @@
+﻿
+@using System.Net.Http.Json
+@using VehicleCategoryManager.Client.DTOs
+@inject HttpClient Http
+
+@if (IsOpen)
+{
+    <div class="modal-backdrop fade show"></div>
+
+    <div class="modal fade show d-block"
+         tabindex="-1"
+         role="dialog"
+         aria-modal="true">
+
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        @(isEditMode ? "Edit Manufacturer" : "Add Manufacturer")
+                    </h5>
+                    <button type="button"
+                            class="btn-close"
+                            @onclick="Close"
+                            disabled="@IsSaving">
+                    </button>
+                </div>
+
+                <EditForm Model="Manufacturer" OnValidSubmit="Submit">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+                        @if (!string.IsNullOrWhiteSpace(errorMessage))
+                        {
+                            <div class="alert alert-danger">
+                                @errorMessage
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            <InputText id="name" class="form-control"
+                                       @bind-Value="Manufacturer.ManufacturerName" />
+                            <ValidationMessage For="@(() => Manufacturer.ManufacturerName)" />
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button"
+                                class="btn btn-secondary"
+                                @onclick="Close"
+                                disabled="@IsSaving">
+                            Cancel
+                        </button>
+
+                        <button type="submit"
+                                class="btn btn-primary"
+                                disabled="@IsSaving">
+                            @(IsSaving ? "Saving..." : isEditMode ? "Edit Manufacturer" : "Add Manufacturer")
+                        </button>
+                    </div>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnManufacturerAdded { get; set; }
+
+    public ManufacturerDTO Manufacturer { get; set; } = new();
+
+    private bool IsSaving;
+    private string? errorMessage;
+
+    private bool isEditMode => Manufacturer.ManufacturerId > 0;
+
+    private async Task Submit()
+    {
+        IsSaving = true;
+        errorMessage = null;
+
+        try
+        {
+            HttpResponseMessage response;
+
+            if(isEditMode)
+            {
+                response = await Http.PutAsJsonAsync($"api/manufacturer/{Manufacturer.ManufacturerId}", Manufacturer);
+            }
+            else
+            {
+                response = await Http.PostAsJsonAsync("api/manufacturer", Manufacturer);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                await OnManufacturerAdded.InvokeAsync();
+                Manufacturer = new ManufacturerDTO();
+                await Close();
+            }
+            else
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+
+                if (string.IsNullOrWhiteSpace(errorMessage))
+                    errorMessage = "Unable to add Manufacturer.";
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Could not connect to the server.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task Close()
+    {
+        await IsOpenChanged.InvokeAsync(false);
+        errorMessage = null;
+    }
+
+}

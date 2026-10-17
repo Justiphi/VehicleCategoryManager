@@ -1,0 +1,102 @@
+﻿@page "/manufacturers"
+@using VehicleCategoryManager.Client.DTOs
+@using VehicleCategoryManager.Client.Components
+@inject HttpClient Http
+
+<PageTitle>Manufacturers</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="mb-0">Manufacturers!</h1>
+    <button class="btn btn-primary" @onclick="OpenModal">
+        Add Manufacturer
+    </button>
+</div>
+@if (manufacturers == null)
+{
+    <p>Loading Manufacturers...</p>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p class="text-danger">@errorMessage</p>
+}
+else if (manufacturers.Count == 0)
+{
+    <p>No manufacturers found.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Manufacturer Name</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var manufacturer in manufacturers)
+            {
+                <tr>
+                    <td>@manufacturer.ManufacturerName</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => EditManufacturer(manufacturer.ManufacturerId)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => DeleteManufacturer(manufacturer.ManufacturerId)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+<AddManufacturerModal @ref="manufacturerModal" @bind-IsOpen="isModalOpen"
+                 OnManufacturerAdded="LoadManufacturers" />
+
+
+
+@code {
+    private AddManufacturerModal? manufacturerModal { get; set; }
+    
+    List<ManufacturerDTO>? manufacturers;
+    private string? errorMessage; 
+    private bool isModalOpen;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadManufacturers();
+    }
+
+    private async Task LoadManufacturers()
+    {
+        try
+        {
+            manufacturers = await Http.GetFromJsonAsync<List<ManufacturerDTO>>("api/manufacturer") ?? new();
+            errorMessage = null;
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Unable to load manufacturers.";
+        }
+    }
+
+    private async Task DeleteManufacturer(int manufacturerId)
+    {
+        HttpResponseMessage response = await Http.DeleteAsync($"api/Manufacturer/{manufacturerId}");
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadManufacturers();
+        }
+        else
+        {
+            errorMessage = "Unable to delete manufacturer.";
+        }
+    }
+
+    private async Task EditManufacturer(int manufacturerId)
+    {
+        if (manufacturers == null) return;
+        manufacturerModal?.Manufacturer = manufacturers.FirstOrDefault(v => v.ManufacturerId == manufacturerId, new());
+        OpenModal();
+    }
+
+    private void OpenModal() => isModalOpen = true;
+}

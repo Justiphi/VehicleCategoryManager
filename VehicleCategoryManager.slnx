@@ -1,4 +1,6 @@
 <Solution>
+  <Project Path="VehicleCategoryManager.Persistance/VehicleCategoryManager.Persistance.csproj" Id="4b6a3a80-aa97-4d22-a49b-5ac3b3946b31" />
+  <Project Path="VehicleCategoryManager.Tests/VehicleCategoryManager.Tests.csproj" Id="3a395d43-04c5-45f0-ab81-74a69dabf135" />
   <Project Path="VehicleCategoryManager/VehicleCategoryManager.Client/VehicleCategoryManager.Client.csproj" />
   <Project Path="VehicleCategoryManager/VehicleCategoryManager/VehicleCategoryManager.csproj" />
 </Solution>

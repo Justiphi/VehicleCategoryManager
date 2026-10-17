@@ -1,0 +1,70 @@
+﻿
+<div class="icon-dropdown">
+    <button type="button"
+            class="form-select d-flex align-items-center gap-2"
+            @onclick="ToggleDropdown">
+        @if (!string.IsNullOrEmpty(SelectedIcon))
+        {
+            <img src="@SelectedIcon"
+                 class="selected-icon"
+                 alt="" />
+        }
+        else
+        {
+            <span class="text-muted">Select an icon...</span>
+        }
+    </button>
+
+    @if (isOpen)
+    {
+        <div class="icon-dropdown-menu">
+            <div class="icon-picker-grid">
+                @foreach (var icon in Icons)
+                {
+                    <button type="button"
+                            @key="icon"
+                            class="icon-option @(SelectedIcon == icon ? "selected" : "")"
+                            title="@icon"
+                            @onclick="() => SelectIcon(icon)">
+                        <img src="@icon" alt="@icon" />
+                    </button>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+
+    [Parameter]
+    public string? SelectedIcon { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> SelectedIconChanged { get; set; }
+
+    private bool isOpen;
+
+    private void ToggleDropdown()
+    {
+        isOpen = !isOpen;
+    }
+
+    private async Task SelectIcon(string icon)
+    {
+        SelectedIcon = icon;
+        await SelectedIconChanged.InvokeAsync(icon);
+        isOpen = false;
+    }
+
+    private List<string> Icons =
+    [
+        "icons/light-weight.svg",
+        "icons/med-weight.svg",
+        "icons/heavy-weight.svg",
+        "icons/weight.svg",
+        "icons/weight2.svg",
+        "icons/weight3.svg",
+        "icons/weight4.svg",
+        "icons/weight5.svg"
+    ];
+}

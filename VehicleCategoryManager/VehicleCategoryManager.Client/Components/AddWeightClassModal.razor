@@ -1,0 +1,172 @@
+﻿
+@using System.Net.Http.Json
+@using VehicleCategoryManager.Client.DTOs
+@inject HttpClient Http
+
+@if (IsOpen)
+{
+    <div class="modal-backdrop fade show"></div>
+
+    <div class="modal fade show d-block"
+         tabindex="-1"
+         role="dialog"
+         aria-modal="true">
+
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        @(isEditMode ? "Edit Weight Class" : "Add Weight Class")
+                    </h5>
+                    <button type="button"
+                            class="btn-close"
+                            @onclick="Close"
+                            disabled="@IsSaving">
+                    </button>
+                </div>
+
+                <EditForm Model="WeightClass" OnValidSubmit="Submit">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+                        @if (!string.IsNullOrWhiteSpace(errorMessage))
+                        {
+                            <div class="alert alert-danger">
+                                @errorMessage
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Class Name</label>
+                            <InputText id="name" class="form-control"
+                                       @bind-Value="WeightClass.VehicleWeightClassName" />
+                            <ValidationMessage For="@(() => WeightClass.VehicleWeightClassName)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="icon" class="form-label">Icon</label>
+                            <IconPicker
+                                       @bind-SelectedIcon="WeightClass.VehicleWeightClassIconPath" />
+                            <ValidationMessage For="@(() => WeightClass.VehicleWeightClassIconPath)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="minWeight" class="form-label">Min Weight (Kg)</label>
+                            <InputNumber id="minWeight" class="form-control"
+                                       @bind-Value="WeightClass.MinWeightKg"
+                                       @bind-Value:after="() => LimitDecimals(() => WeightClass.MinWeightKg,
+                                                     v => WeightClass.MinWeightKg = v ?? 0)" 
+                                       min="0"
+                                       step="100"/>
+                            <ValidationMessage For="@(() => WeightClass.MinWeightKg)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="maxWeight" class="form-label">Max Weight (Kg)</label>
+                            <InputNumber id="maxWeight" class="form-control"
+                                       @bind-Value="WeightClass.MaxWeightKg"
+                                       @bind-Value:after="() => LimitDecimals(() => WeightClass.MaxWeightKg,
+                                                     v => WeightClass.MaxWeightKg = v)" 
+                                       placeholder="Max"
+                                       step="100"/>
+                            <ValidationMessage For="@(() => WeightClass.MaxWeightKg)" />
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button"
+                                class="btn btn-secondary"
+                                @onclick="Close"
+                                disabled="@IsSaving">
+                            Cancel
+                        </button>
+
+                        <button type="submit"
+                                class="btn btn-primary"
+                                disabled="@IsSaving">
+                            @(IsSaving ? "Saving..." : isEditMode ? "Edit Weight Class" : "Add Weight Class")
+                        </button>
+                    </div>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnWeightClassAdded { get; set; }
+
+    public WeightClassDTO WeightClass { get; set; } = new();
+
+    private bool isEditMode => WeightClass.VehicleWeightClassId > 0;
+
+    private bool IsSaving;
+    private string? errorMessage;
+
+    private async Task Submit()
+    {
+        IsSaving = true;
+        errorMessage = null;
+
+        try
+        {
+            HttpResponseMessage response;
+
+            if(isEditMode)
+            {
+                response = await Http.PutAsJsonAsync($"api/weightclass/{WeightClass.VehicleWeightClassId}", WeightClass);
+            }
+            else
+            {
+                response = await Http.PostAsJsonAsync("api/weightclass", WeightClass);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                await OnWeightClassAdded.InvokeAsync();
+                WeightClass = new WeightClassDTO();
+                await Close();
+            }
+            else
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+
+                if (string.IsNullOrWhiteSpace(errorMessage))
+                    errorMessage = "Unable to add weight class.";
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Could not connect to the server.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private void LimitDecimals(Func<decimal?> getValue, Action<decimal?> setValue)
+    {
+        var value = getValue();
+    
+        if (value.HasValue)
+            setValue(Math.Round(value.Value, 2));
+    }
+    
+    private async Task Close()
+    {
+        await IsOpenChanged.InvokeAsync(false);
+        errorMessage = null;
+    }
+
+}

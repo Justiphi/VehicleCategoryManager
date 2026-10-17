@@ -1,0 +1,114 @@
+﻿@page "/weightclasses"
+@using VehicleCategoryManager.Client.DTOs
+@using VehicleCategoryManager.Client.Components
+@inject HttpClient Http
+
+<PageTitle>Weight Classes</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="mb-0">Weight Classes!</h1>
+    <button class="btn btn-primary" @onclick="OpenModal">
+        Add Weight Class
+    </button>
+</div>
+@if (weightClasses == null)
+{
+    <p>Loading Weight Classes...</p>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p class="text-danger">@errorMessage</p>
+}
+else if (weightClasses.Count == 0)
+{
+    <p>No weight classes found.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Class Name</th>
+                <th>Icon</th>
+                <th>Min Weight (kg)</th>
+                <th>Max Weight (kg)</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var weightClass in weightClasses)
+            {
+                <tr>
+                    <td>@weightClass.VehicleWeightClassName</td>
+                    <td>
+                        <img src="@weightClass.VehicleWeightClassIconPath" style="width:30px;" alt="Weight Icon" />
+                    </td>
+                    <td>@string.Format("{0}kg", weightClass.MinWeightKg)</td>
+                    <td>
+                        @(weightClass.MaxWeightKg != null
+                            ? $"{weightClass.MaxWeightKg}kg"
+                            : "No Limit")
+                    </td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => EditWeightClass(weightClass.VehicleWeightClassId)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => DeleteWeightClass(weightClass.VehicleWeightClassId)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+<AddWeightClassModal @ref="weightclassModal" @bind-IsOpen="isModalOpen"
+                 OnWeightClassAdded="LoadWeightClasses" />
+
+
+
+@code {
+    private AddWeightClassModal? weightclassModal { get; set; }
+
+    List<WeightClassDTO>? weightClasses;
+    private string? errorMessage; 
+    private bool isModalOpen;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWeightClasses();
+    }
+
+    private async Task LoadWeightClasses()
+    {
+        try
+        {
+            weightClasses = await Http.GetFromJsonAsync<List<WeightClassDTO>>("api/WeightClass") ?? new();
+            errorMessage = null;
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Unable to load weight classes.";
+        }
+    }
+
+    private async Task DeleteWeightClass(int weightclassId)
+    {
+        HttpResponseMessage response = await Http.DeleteAsync($"api/WeightClass/{weightclassId}");
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadWeightClasses();
+        }
+        else
+        {
+            errorMessage = "Unable to delete weightclass.";
+        }
+    }
+
+    private async Task EditWeightClass(int weightClassId)
+    {
+        if (weightClasses == null) return;
+        weightclassModal?.WeightClass = weightClasses.FirstOrDefault(v => v.VehicleWeightClassId == weightClassId, new());
+        OpenModal();
+    }
+
+    private void OpenModal() => isModalOpen = true;
+}

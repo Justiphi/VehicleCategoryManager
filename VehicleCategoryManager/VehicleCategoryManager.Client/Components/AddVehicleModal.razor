@@ -1,0 +1,196 @@
+﻿
+@using System.Net.Http.Json
+@using VehicleCategoryManager.Client.DTOs
+@inject HttpClient Http
+
+@if (IsOpen)
+{
+    <div class="modal-backdrop fade show"></div>
+
+    <div class="modal fade show d-block"
+         tabindex="-1"
+         role="dialog"
+         aria-modal="true">
+
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        @(isEditMode ? "Edit Vehicle" : "Add Vehicle")
+                    </h5>
+                    <button type="button"
+                            class="btn-close"
+                            @onclick="Close"
+                            disabled="@IsSaving">
+                    </button>
+                </div>
+
+                <EditForm Model="Vehicle" OnValidSubmit="Submit">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+                        @if (!string.IsNullOrWhiteSpace(errorMessage))
+                        {
+                            <div class="alert alert-danger">
+                                @errorMessage
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label for="owner" class="form-label">Owner</label>
+                            <InputText id="owner" class="form-control"
+                                       @bind-Value="Vehicle.Owner" />
+                            <ValidationMessage For="@(() => Vehicle.Owner)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="weight" class="form-label">Weight (kg)</label>
+                            <InputNumber id="weight" class="form-control"
+                                         @bind-Value="Vehicle.WeightKg" 
+                                         step="100"
+                                         min="0"/>
+                            <ValidationMessage For="@(() => Vehicle.WeightKg)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="year" class="form-label">Year</label>
+                            <InputNumber id="year" class="form-control"
+                                         @bind-Value="Vehicle.Year" />
+                            <ValidationMessage For="@(() => Vehicle.Year)" />
+                        </div>
+
+                        <div class="mb-3">
+                            @if (manufacturers == null)
+                            {
+                                <p>Loading manufacturers. . .</p>
+                            }
+                            else
+                            {
+                                <label for="manufacturer" class="form-label">Manufacturer</label>
+                                <InputSelect id="manufacturer" class="form-select"
+                                @bind-Value="Vehicle.ManufacturerId">
+                                    <option value="0">Select a manufacturer</option>
+                                    @foreach (var manufacturer in manufacturers)
+                                    {
+                                        <option value="@manufacturer.ManufacturerId">
+                                            @manufacturer.ManufacturerName
+                                        </option>
+                                    }
+                                </InputSelect>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button"
+                                class="btn btn-secondary"
+                                @onclick="Close"
+                                disabled="@IsSaving">
+                            Cancel
+                        </button>
+
+                        <button type="submit"
+                                class="btn btn-primary"
+                                disabled="@IsSaving">
+                            @(IsSaving ? "Saving..." : isEditMode ? "Edit Vehicle" : "Add Vehicle")
+                        </button>
+                    </div>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnVehicleAdded { get; set; }
+
+    public VehicleDTO Vehicle { get; set; } = new();
+
+    private List<ManufacturerDTO> manufacturers { get; set; } = new();
+    private bool _previousIsOpen;
+    private bool IsSaving;
+    private string? errorMessage;
+
+    private bool isEditMode => Vehicle.VehicleId > 0;
+
+    private async Task Submit()
+    {
+        IsSaving = true;
+        errorMessage = null;
+
+        try
+        {
+            HttpResponseMessage response;
+
+            if(isEditMode)
+            {
+                response = await Http.PutAsJsonAsync($"api/Vehicle/{Vehicle.VehicleId}", Vehicle);
+            }
+            else
+            {
+                response = await Http.PostAsJsonAsync("api/Vehicle", Vehicle);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                await OnVehicleAdded.InvokeAsync();
+                Vehicle = new VehicleDTO();
+                await Close();
+            }
+            else
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+
+                if (string.IsNullOrWhiteSpace(errorMessage))
+                    errorMessage = "Unable to add Vehicle.";
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Could not connect to the server.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task LoadManufacturers()
+    {
+        try
+        {
+            manufacturers = await Http.GetFromJsonAsync<List<ManufacturerDTO>>("api/Manufacturer") ?? new();
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Unable to load manufacturers.";
+        }
+    }
+
+    private async Task Close()
+    {
+        Vehicle = new();
+        await IsOpenChanged.InvokeAsync(false);
+        errorMessage = null;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_previousIsOpen)
+        {
+            await LoadManufacturers();
+        }
+
+        _previousIsOpen = IsOpen;
+    }
+
+}
