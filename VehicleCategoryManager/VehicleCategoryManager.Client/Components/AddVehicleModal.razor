@@ -48,7 +48,6 @@
                             <label for="weight" class="form-label">Weight (kg)</label>
                             <InputNumber id="weight" class="form-control"
                                          @bind-Value="Vehicle.WeightKg" 
-                                         step="100"
                                          min="0"/>
                             <ValidationMessage For="@(() => Vehicle.WeightKg)" />
                         </div>
@@ -179,6 +178,10 @@
     private async Task Close()
     {
         Vehicle = new();
+        if(isEditMode)
+        {
+            await OnVehicleAdded.InvokeAsync();
+        }
         await IsOpenChanged.InvokeAsync(false);
         errorMessage = null;
     }

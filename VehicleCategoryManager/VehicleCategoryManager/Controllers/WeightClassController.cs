@@ -41,43 +41,54 @@ namespace VehicleCategoryManager.Controllers
             try
             {
                 int recordId = _weightClassService.AddWeightClass(MapToEntity(weightClass));
-                if (recordId == 0)
+                if (recordId != 0)
                 {
                     return Ok();
                 }
-                return BadRequest("Failed to create weightClass");
+                //fallback
+                return BadRequest("Unknown Error: Failed to create weightClass");
             }
             catch (Exception ex)
             {
-                // Log the exception
-                Console.WriteLine($"Error in Create GET: {ex.Message}");
-                return StatusCode(500, "Internal server error");
+                return BadRequest(ex.Message);
             }
         }
 
         [HttpPut("{id:int}")]
         public ActionResult Edit(int id, WeightClassDTO weightClass)
         {
-            if (id != weightClass.VehicleWeightClassId)
+            try
             {
-                return BadRequest("WeightClass ID mismatch");
+                if (id != weightClass.VehicleWeightClassId)
+                {
+                    return BadRequest("WeightClass ID mismatch");
+                }
+    
+                if (_weightClassService.UpdateWeightClass(MapToEntity(weightClass)))
+                {
+                    return Ok();
+                }
+                //fallback
+                return BadRequest("Unknown Error: Failed to update weightClass");
             }
-
-            if (_weightClassService.UpdateWeightClass(MapToEntity(weightClass)))
+            catch (Exception ex)
             {
-                return Ok();
+                return BadRequest(ex.Message);
             }
-            return BadRequest("Failed to update weightClass");
         }
 
         [HttpDelete("{id:int}")]
         public ActionResult Delete(int id)
         {
-            if (_weightClassService.DeleteWeightClass(id))
+            try
             {
+                _weightClassService.DeleteWeightClass(id);
                 return Ok();
             }
-            return BadRequest("Failed to delete weightClass");
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         private WeightClassDTO MapToDTO(VehicleWeightClass weightClass)

@@ -10,14 +10,21 @@ namespace VehicleCategoryManager.Persistance.Services
 
         public bool ValidateRecord(DataContext context, Manufacturer manufacturer)
         {
+            List<string> errorList = new();
+
             if (string.IsNullOrWhiteSpace(manufacturer.ManufacturerName))
             {
-                return false;
+                errorList.Add("Name is Required.");
             }
 
             if(context.Manufacturers.Where(m => m.ManufacturerName == manufacturer.ManufacturerName && m.ManufacturerId != manufacturer.ManufacturerId).Any())
             {
-                return false;
+                errorList.Add("Name is currently in use.");
+            }
+
+            if (errorList.Any())
+            {
+                throw new InvalidDataException(string.Join(", \n", errorList));
             }
 
             return true;
@@ -28,7 +35,7 @@ namespace VehicleCategoryManager.Persistance.Services
             using (var context = _contextFactory.CreateContext())
             {
                 if (!ValidateRecord(context, manufacturer))
-                {
+                { 
                     return 0;
                 }
             
@@ -75,13 +82,13 @@ namespace VehicleCategoryManager.Persistance.Services
                 var manufacturer = context.Manufacturers.Include(m => m.Vehicles).FirstOrDefault(m => m.ManufacturerId == manufacturerId);
                 if (manufacturer == null)
                 {
-                    return false;
+                    throw new InvalidDataException("Cannot Delete: Manufacturer not found.");
                 }
 
                 if(manufacturer.Vehicles != null && manufacturer.Vehicles.Count > 0)
                 {
                     // Cannot delete manufacturer with associated vehicles
-                    return false;
+                    throw new InvalidOperationException("Cannot Delete: Manufacturer has vehicles associated with it.");
                 }
 
                 context.Manufacturers.Remove(manufacturer);

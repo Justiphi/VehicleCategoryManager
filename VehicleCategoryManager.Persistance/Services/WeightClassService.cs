@@ -24,16 +24,30 @@ namespace VehicleCategoryManager.Persistance.Services
 
         private bool ValidateWeightClass(DataContext context, VehicleWeightClass weightClass)
         {
+            List<string> errorList = new();
+
             //cannot add or update a weight class to cover the entire range of weights, this can only exist by deleting all other weight classes.
             if (weightClass.MinWeightKg == 0 && weightClass.MaxWeightKg == null)
             {
-                return false;
+                errorList.Add("Weight range is not valid. (must have a minimum, maximum or both)");
+            }
+
+            //max weight cannot be lower than minimum weight.
+            if(weightClass.MaxWeightKg != null && weightClass.MaxWeightKg <= weightClass.MinWeightKg)
+            {
+                errorList.Add("Minimum weight must not be lower than the maximum weight.");
+            }
+
+            //cannot add or update a weight class with a 0 max weight.
+            if (weightClass.MaxWeightKg == 0)
+            {
+                errorList.Add("Maximum Weight must be greater than 0.");
             }
 
             //cannot add a icon that does not exist
-            if(!Icons.Contains(weightClass.VehicleWeightClassIconPath))
+            if (!Icons.Contains(weightClass.VehicleWeightClassIconPath))
             {
-                return false;
+                errorList.Add("Icon not found, please select another.");
             }
 
             var classes = context.VehicleWeightClasses.Where(wc => wc.VehicleWeightClassId != weightClass.VehicleWeightClassId);
@@ -41,31 +55,36 @@ namespace VehicleCategoryManager.Persistance.Services
             //duplication of name is not allowed
             if (classes.Any(wc => wc.VehicleWeightClassName == weightClass.VehicleWeightClassName))
             {
-                return false;
+                errorList.Add("Weight class name is already in use.");
             }
 
             //duplication of icons not allowed
             if (classes.Any(wc => wc.VehicleWeightClassIconPath == weightClass.VehicleWeightClassIconPath))
             {
-                return false;
+                errorList.Add("Icon is already in use.");
             }
 
             //if a weight class already exists within the same min and max weight, do not allow add
             if (classes.Any(wc => wc.MinWeightKg == weightClass.MinWeightKg && wc.MaxWeightKg == weightClass.MaxWeightKg))
             {
-                return false;
+                errorList.Add("Another weight class with this range exists.");
             }
 
             //if a weight class fully encloses the new weight class, do not allow add
             if (classes.Any(wc => wc.MinWeightKg > weightClass.MinWeightKg && (weightClass.MaxWeightKg == null || wc.MaxWeightKg < weightClass.MaxWeightKg)))
             {
-                return false;
+                errorList.Add("Another single weight class already covers this range.");
             }
 
             //if an existing weight class is fully enclosed by the new weight class, do not allow add
-            if (classes.Any(wc => wc.MinWeightKg > weightClass.MinWeightKg && ((weightClass.MaxWeightKg == null && wc.MaxWeightKg == null) || wc.MaxWeightKg > weightClass.MaxWeightKg)))
+            if (classes.Any(wc => wc.MinWeightKg >= weightClass.MinWeightKg && ((weightClass.MaxWeightKg == null && wc.MaxWeightKg == null) || wc.MaxWeightKg <= weightClass.MaxWeightKg)))
             {
-                return false;
+                errorList.Add("This weight range would fully enclose another, this is not allowed");
+            }
+
+            if (errorList.Any())
+            {
+                throw new InvalidDataException(string.Join(" \n", errorList));
             }
 
             return true;
@@ -104,10 +123,22 @@ namespace VehicleCategoryManager.Persistance.Services
 
                 weightClassInstanced = context.VehicleWeightClasses.Find(weightClass.VehicleWeightClassId);
 
+                //ensure we are not removing maximum
+                if(weightClassInstanced.MaxWeightKg == null && weightClass.MaxWeightKg != null)
+                {
+                    throw new InvalidDataException("Cannot Update: Cannot limit upper value of highest class.");
+                }
+
+                //ensure we are not removing minimum
+                if(weightClassInstanced.MinWeightKg == 0 && weightClass.MinWeightKg != 0)
+                {
+                    throw new InvalidDataException("Cannot Update: Cannot be left without a class that has minimum weight of 0.");
+                }
+
                 //ensure record exists before updating
                 if (weightClassInstanced == null)
                 {
-                    return false;
+                    throw new InvalidDataException("Cannot Update: Weight class not found.");
                 }
 
                 weightClassInstanced.VehicleWeightClassName = weightClass.VehicleWeightClassName;
@@ -116,7 +147,7 @@ namespace VehicleCategoryManager.Persistance.Services
                 weightClassInstanced.MaxWeightKg = weightClass.MaxWeightKg;
 
                 context.VehicleWeightClasses.Update(weightClassInstanced);
-                AdjustSideClassesToFixGaps(context, weightClass);
+                AdjustSideClassesToFixGaps(context, weightClass, false);
 
                 context.SaveChanges();
             }
@@ -130,23 +161,23 @@ namespace VehicleCategoryManager.Persistance.Services
         /// <param name="context">datbase context</param>
         /// <param name="weightClass">updated weight class object</param>
         /// <returns>success status</returns>
-        private bool AdjustSideClassesToFixGaps(DataContext context, VehicleWeightClass weightClass)
+        private bool AdjustSideClassesToFixGaps(DataContext context, VehicleWeightClass weightClass, bool adding = true)
         {            
             var classes = context.VehicleWeightClasses.Where(wc => wc.VehicleWeightClassId != weightClass.VehicleWeightClassId);
 
-            //new first class
+            //first class
             if (weightClass.MinWeightKg == 0)
             {
-                var firstClass = classes.OrderBy(wc => wc.MinWeightKg).FirstOrDefault();
-                if (firstClass != null && weightClass.MaxWeightKg != null)
+                var nextClass = classes.OrderBy(wc => wc.MinWeightKg).FirstOrDefault();
+                if (nextClass != null && weightClass.MaxWeightKg != null)
                 {
-                    firstClass.MinWeightKg = weightClass.MaxWeightKg.Value;
-                    context.VehicleWeightClasses.Update(firstClass);
+                    nextClass.MinWeightKg = weightClass.MaxWeightKg.Value;
+                    context.VehicleWeightClasses.Update(nextClass);
                 }
             }
             else
             {
-                //if this is a new first class, there is no previous class to adjust
+                //if this is the first class, there is no previous class to adjust
                 var previousClass = classes.Where(wc => wc.MaxWeightKg > weightClass.MinWeightKg).OrderByDescending(wc => wc.MaxWeightKg).FirstOrDefault();
                 if (previousClass != null)
                 {
@@ -155,19 +186,31 @@ namespace VehicleCategoryManager.Persistance.Services
                 }
             }
 
-            //new last class
+            //last class
             if(weightClass.MaxWeightKg == null)
             {
-                var lastClass = classes.Where(wc => wc.MaxWeightKg == null).FirstOrDefault();
-                if (lastClass != null)
+                VehicleWeightClass previousClass;
+                
+                if(adding)
                 {
-                    lastClass.MaxWeightKg = weightClass.MinWeightKg;
-                    context.VehicleWeightClasses.Update(lastClass);
+                    //Adding so alter previous max class
+                    previousClass = classes.Where(wc => wc.MaxWeightKg == null).FirstOrDefault();
+                }
+                else
+                {
+                    //Editing so find max with value
+                    previousClass = classes.OrderByDescending(wc => wc.MaxWeightKg).FirstOrDefault();
+                }
+
+                if (previousClass != null)
+                {
+                    previousClass.MaxWeightKg = weightClass.MinWeightKg;
+                    context.VehicleWeightClasses.Update(previousClass);
                 }
             }
             else
             {
-                //if this is a new last class, there is no next class to adjust
+                //if this is the last class, there is no next class to adjust
                 var nextClass = classes.Where(wc => wc.MinWeightKg < weightClass.MaxWeightKg).OrderByDescending(wc => wc.MinWeightKg).FirstOrDefault();
                 if (nextClass != null)
                 {
@@ -187,13 +230,13 @@ namespace VehicleCategoryManager.Persistance.Services
                 //cannot delete last record, must have at least one weight class
                 if (context.VehicleWeightClasses.Count() == 1)
                 {
-                    return false;
+                    throw new InvalidOperationException("Cannot Delete: Cannot delete last weight class.");
                 }
 
                 var weightClass = context.VehicleWeightClasses.Find(weightClassId);
                 if (weightClass == null)
                 {
-                    return false;
+                    throw new InvalidDataException("Cannot Delete: Weight class not found.");
                 }
 
                 decimal? midPoint = weightClass.MinWeightKg == 0 ? 0 : weightClass.MaxWeightKg == null ? null : (weightClass.MinWeightKg + weightClass.MaxWeightKg) / 2;
@@ -225,7 +268,7 @@ namespace VehicleCategoryManager.Persistance.Services
 
             if (joinPoint < 0)
             {
-                return false;
+                throw new InvalidOperationException("Error: unable to calculate new class values.");
             }
 
             //last weight class, but only one weight class exists, set the minimum of the first weight class to 0 and the maximum to null

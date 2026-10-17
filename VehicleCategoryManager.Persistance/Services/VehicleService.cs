@@ -12,19 +12,26 @@ namespace VehicleCategoryManager.Persistance.Services
 
         public bool ValidateRecord(DataContext context, Vehicle vehicle)
         {
+            List<string> errorList = new();
+
             if(vehicle.WeightKg <= 0)
             {
-                return false;
+                errorList.Add("Weight must be a positive value.");
             }
 
             if(vehicle.Year.ToString().Length != 4)
             {
-                return false;
+                errorList.Add("Invalid Year: Year must be 4 characters");
             }
 
-            if (vehicle.Year < 1886 || vehicle.Year > DateTime.Now.Year)
+            if (vehicle.Year < 1800 || vehicle.Year > DateTime.Now.Year)
             {
-                return false;
+                errorList.Add($"Invalid Year: Year must be between 1800 and {DateTime.Now.Year}");
+            }
+
+            if (errorList.Any())
+            {
+                throw new InvalidDataException(string.Join(", \n", errorList));
             }
 
             return true;
@@ -63,7 +70,7 @@ namespace VehicleCategoryManager.Persistance.Services
                 //ensure record exists before updating
                 if (vehicleInstanced == null)
                 {
-                    return false;
+                    throw new InvalidDataException("Cannot Update: Vehicle not found.");
                 }
 
                 vehicleInstanced.WeightKg = vehicle.WeightKg;
@@ -85,7 +92,7 @@ namespace VehicleCategoryManager.Persistance.Services
                 var vehicle = context.Vehicles.Find(vehicleId);
                 if (vehicle == null)
                 {
-                    return false;
+                    throw new InvalidDataException("Cannot Delete: Vehicle not found.");
                 }
 
                 context.Vehicles.Remove(vehicle);

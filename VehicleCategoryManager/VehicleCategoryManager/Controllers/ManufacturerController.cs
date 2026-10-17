@@ -44,41 +44,52 @@ namespace VehicleCategoryManager.Controllers
                 var manufacturerid = _manufacturerService.AddManufacturer(MapToEntity(manufacturer));
                 if (manufacturerid != 0)
                 {
-                    return RedirectToAction("Index");
+                    return Ok();
                 }
-                return BadRequest("Failed to create manufacturer");
+                //fallback
+                return BadRequest("Unknown Error: Failed to create manufacturer");
             }
             catch (Exception ex)
             {
-                // Log the exception
-                Console.WriteLine($"Error in Create GET: {ex.Message}");
-                return StatusCode(500, "Internal server error");
+                return BadRequest(ex.Message);
             }
         }
 
         [HttpPut("{id:int}")]
         public ActionResult Edit(int id, ManufacturerDTO manufacturer)
         {
-            if(id != manufacturer.ManufacturerId)
+            try
             {
-                return BadRequest("Manufacturer ID mismatch");
-            }
+                if (id != manufacturer.ManufacturerId)
+                {
+                    return BadRequest("Manufacturer ID mismatch");
+                }
 
-            if (_manufacturerService.UpdateManufacturer(MapToEntity(manufacturer)))
-            {
+                _manufacturerService.UpdateManufacturer(MapToEntity(manufacturer));
+
                 return Ok();
             }
-            return BadRequest("Failed to update manufacturer");
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete("{id:int}")]
         public ActionResult Delete(int id)
         {
-            if (_manufacturerService.DeleteManufacturer(id))
+            try
             {
-                return Ok();
+                if (_manufacturerService.DeleteManufacturer(id))
+                {
+                    return Ok();
+                }
+                return BadRequest("Failed to delete manufacturer");
             }
-            return BadRequest("Failed to delete manufacturer");
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         private ManufacturerDTO MapToDTO(Manufacturer manufacturer)

@@ -162,6 +162,7 @@ I chose this approach to ensure a more readable and user friendly experience whe
   - If the category was the largest, (no upper limit) then the previous category must have its upper limit removed to accomidate.
   - Due to this assumption, the only validation required for weight class is to ensure an added record does not entirely overlap an existing category, as the application will handle the rest of the validation and adjustments to ensure no gaps or overlaps are present in the categories.
 - A single owner may have multiple vehicles with the same weight, year and manufacturer, this accomodates fleets although there is no current way to differentiate between the vehicles.
+- A vehicle cannot have a year before 1800, the first gasoline powered vehicle was created in 1885, 1800 is a cleaner value to remove excessively bad data and prevent user misinput. 
 
 
 ## Significant Design Decisions:
@@ -189,7 +190,7 @@ I chose this approach to ensure a more readable and user friendly experience whe
 
 
 # Additional Notes:
-- I have opted not to use any generative AI within the creation of this technical test to demonstrate my skills as a developer.
+- I have opted not to use any agentic AI within the creation of this technical test to demonstrate my skills as a developer.
 - An alternative to using Blazor WASM that I could use is Blazor Server: 
   - This would simplify the application and not require an API endpoint as the web page is rendered entirely on the server before being sent to the client. 
   - Server is also more secure against scripting and injection attacks as all code is stored and executed on the server, though more vulnerable to DoS attacks as it maintains an active connection with each client.

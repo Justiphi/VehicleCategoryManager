@@ -48,39 +48,49 @@ namespace VehicleCategoryManager.Controllers
                 {
                     return NoContent();
                 }
-                return BadRequest("Failed to create vehicle");
+                //fallback
+                return BadRequest("Unknown Error: Failed to create vehicle");
             }
             catch (Exception ex)
             {
-                // Log the exception
-                Console.WriteLine($"Error in Create GET: {ex.Message}");
-                return StatusCode(500, "Internal server error");
+                return BadRequest(ex.Message);
             }
         }
 
         [HttpPut("{id:int}")]
         public ActionResult Edit(int id, VehicleDTO vehicle)
         {
-            if (id != vehicle.VehicleId)
+            try
             {
-                return BadRequest("Vehicle ID mismatch");
-            }
+                if (id != vehicle.VehicleId)
+                {
+                    return BadRequest("Vehicle ID mismatch");
+                }
 
-            if (_vehicleService.UpdateVehicle(MapToEntity(vehicle)))
-            {
-                return NoContent();
+                if (_vehicleService.UpdateVehicle(MapToEntity(vehicle)))
+                {
+                    return NoContent();
+                }
+                return BadRequest("Failed to update vehicle");
             }
-            return BadRequest("Failed to update vehicle");
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete("{id:int}")]
         public ActionResult Delete(int id)
         {
-            if (_vehicleService.DeleteVehicle(id))
+            try
             {
+                _vehicleService.DeleteVehicle(id);
                 return NoContent();
             }
-            return BadRequest("Failed to delete vehicle");
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         private VehicleDTO MapToDTO(Vehicle vehicle)

@@ -87,10 +87,12 @@ namespace VehicleCategoryManager.Tests
             _weightClassService.DeleteWeightClass(2);
             _weightClassService.DeleteWeightClass(3);
             // Attempt to delete the last remaining class (light)
-            var deleted = _weightClassService.DeleteWeightClass(1);
-            Assert.False(deleted);
+            Assert.ThrowsAny<InvalidOperationException>(() =>
+                _weightClassService.DeleteWeightClass(1)
+            );
+
             // Ensure the light class still exists
-            var lightWeightClass = _database.Context.VehicleWeightClasses.FirstOrDefault(wc => wc.VehicleWeightClassId == 1);
+            var lightWeightClass = _weightClassService.GetWeightClassById(1);
             Assert.NotNull(lightWeightClass);
         }
 
@@ -132,24 +134,112 @@ namespace VehicleCategoryManager.Tests
         public void AddWeightClass_WhenIconAlreadyUsed_CannotAdd()
         {
             var newWeightClass = new VehicleWeightClass("Test", "icons/light-weight.svg", 3000, null, 2);
-            var added = _weightClassService.AddWeightClass(newWeightClass);
-            Assert.Equal(0, added);
+            Assert.ThrowsAny<InvalidDataException>(() =>
+                _weightClassService.AddWeightClass(newWeightClass)
+            );
         }
 
         [Fact]
         public void AddWeightClass_WhenNameAlreadyUsed_CannotAdd()
         {
             var newWeightClass = new VehicleWeightClass("Heavy", "icons/weight.svg", 3000, null, 2);
-            var added = _weightClassService.AddWeightClass(newWeightClass);
-            Assert.Equal(0, added);
+            Assert.ThrowsAny<InvalidDataException>(() =>
+                _weightClassService.AddWeightClass(newWeightClass)
+            );
         }
 
         [Fact]
         public void AddWeightClass_WhenIconDoesNotExist_CannotAdd()
         {
             var newWeightClass = new VehicleWeightClass("Test", "no-icon", 3000, null, 2);
-            var added = _weightClassService.AddWeightClass(newWeightClass);
-            Assert.Equal(0, added);
+            Assert.ThrowsAny<InvalidDataException>(() =>
+                _weightClassService.AddWeightClass(newWeightClass)
+            );
+        }
+
+        [Fact]
+        public void GetWeightClassByWeight_WhenCalled_ReturnsCorrectClass()
+        {
+            decimal[] weightsToTest = [ 500m, 2500m, 7000m, 600m, 650.22m ];
+
+            foreach(decimal weight in weightsToTest)
+            {
+                var weightClass = _weightClassService.GetWeightClassByWeight(weight);
+                Assert.NotNull(weightClass);
+                Assert.True(weight < weightClass.MaxWeightKg || weightClass.MaxWeightKg == null);
+                Assert.True(weight >= weightClass.MinWeightKg);
+            }
+        }
+
+        [Fact]
+        public void GetWeightClassByWeight_WhenCalledWithNegative_ReturnsNothing()
+        {
+            var weightClass = _weightClassService.GetWeightClassByWeight(-200);
+            Assert.Null(weightClass);
+        }
+
+        [Fact]
+        public void EditWeightClass_WhenAlterHeaviestMin_AdjustPreviousClass()
+        {
+            var weightClass = _weightClassService.GetWeightClassById(3);
+            Assert.NotNull(weightClass);
+
+            //check increase
+            weightClass.MinWeightKg = 3000m;
+            _weightClassService.UpdateWeightClass(weightClass);
+            var medWeightClass = _weightClassService.GetWeightClassById(2);
+            Assert.Equal(3000, medWeightClass.MaxWeightKg);
+
+
+
+            //check decrease
+            weightClass.MinWeightKg = 2000m;
+            _weightClassService.UpdateWeightClass(weightClass);
+            medWeightClass = _weightClassService.GetWeightClassById(2);
+            Assert.Equal(2000, medWeightClass.MaxWeightKg);
+        }
+
+        [Fact]
+        public void EditWeightClass_WhenAlterLightestMax_AdjustNextClass()
+        {
+            var weightClass = _weightClassService.GetWeightClassById(1);
+            Assert.NotNull(weightClass);
+
+            //check decrease
+            weightClass.MaxWeightKg = 250m;
+            _weightClassService.UpdateWeightClass(weightClass);
+            var medWeightClass = _weightClassService.GetWeightClassById(2);
+            Assert.Equal(250, medWeightClass.MinWeightKg);
+
+            //check increase
+            weightClass.MaxWeightKg = 750m;
+            _weightClassService.UpdateWeightClass(weightClass);
+            medWeightClass = _weightClassService.GetWeightClassById(2);
+            Assert.Equal(750, medWeightClass.MinWeightKg);
+        }
+
+        [Fact]
+        public void EditWeightClass_WhenAlterHeaviestMax_CannotAlter()
+        {
+            var weightClass = _weightClassService.GetWeightClassById(3);
+            Assert.NotNull(weightClass);
+
+            weightClass.MaxWeightKg = 3000m;
+            Assert.ThrowsAny<InvalidDataException>(() =>
+                _weightClassService.UpdateWeightClass(weightClass)
+            );
+        }
+
+        [Fact]
+        public void EditWeightClass_WhenAlterLightestMin_CannotAlter()
+        {
+            var weightClass = _weightClassService.GetWeightClassById(1);
+            Assert.NotNull(weightClass);
+
+            weightClass.MinWeightKg = 250m;
+            Assert.ThrowsAny<InvalidDataException>(() =>
+                _weightClassService.UpdateWeightClass(weightClass)
+            );
         }
     }
 }

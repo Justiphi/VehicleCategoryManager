@@ -57,8 +57,7 @@
                                        @bind-Value="WeightClass.MinWeightKg"
                                        @bind-Value:after="() => LimitDecimals(() => WeightClass.MinWeightKg,
                                                      v => WeightClass.MinWeightKg = v ?? 0)" 
-                                       min="0"
-                                       step="100"/>
+                                       min="0"/>
                             <ValidationMessage For="@(() => WeightClass.MinWeightKg)" />
                         </div>
 
@@ -68,8 +67,7 @@
                                        @bind-Value="WeightClass.MaxWeightKg"
                                        @bind-Value:after="() => LimitDecimals(() => WeightClass.MaxWeightKg,
                                                      v => WeightClass.MaxWeightKg = v)" 
-                                       placeholder="Max"
-                                       step="100"/>
+                                       placeholder="Max"/>
                             <ValidationMessage For="@(() => WeightClass.MaxWeightKg)" />
                         </div>
 
@@ -165,6 +163,10 @@
     
     private async Task Close()
     {
+        if(isEditMode)
+        {
+            await OnWeightClassAdded.InvokeAsync();
+        }
         await IsOpenChanged.InvokeAsync(false);
         errorMessage = null;
     }

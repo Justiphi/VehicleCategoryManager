@@ -28,8 +28,9 @@ namespace VehicleCategoryManager.Tests
         public void AddManufacturer_WhenNameExists_CannotAdd()
         {
             var manufacturer = new Manufacturer("Toyota");
-            var added = _manufacturerService.AddManufacturer(manufacturer);
-            Assert.Equal(0, added);
+            Assert.ThrowsAny<InvalidDataException>(() => 
+                _manufacturerService.AddManufacturer(manufacturer)
+            );
         }
 
         [Fact]
@@ -39,8 +40,9 @@ namespace VehicleCategoryManager.Tests
             var added = _vehicleService.AddVehicle(newVehicle);
             Assert.NotEqual(0, added);
 
-            var result = _manufacturerService.DeleteManufacturer(1);
-            Assert.False(result);
+            Assert.ThrowsAny<InvalidOperationException>(() => 
+                _manufacturerService.DeleteManufacturer(1)
+            );
         }
 
 
