@@ -22,11 +22,20 @@ namespace VehicleCategoryManager.Client.Pages
             {
                 manufacturers = await Http.GetFromJsonAsync<List<ManufacturerDTO>>("api/manufacturer") ?? new();
                 errorMessage = null;
+                loadErrorMessage = null;
             }
             catch (HttpRequestException)
             {
-                errorMessage = "Unable to load manufacturers.";
+                loadErrorMessage = "Unable to load manufacturers.";
             }
+        }
+
+        protected override async Task PromptDelete(int recordId)
+        {
+            var record = manufacturers.Find(v => v.ManufacturerId == recordId);
+            deleteModal.ConfirmationMessage = $"Are you sure you want to delete: {record.ManufacturerName}?";
+
+            await base.PromptDelete(recordId);
         }
 
         private async Task DeleteManufacturer(int manufacturerId)
@@ -38,12 +47,17 @@ namespace VehicleCategoryManager.Client.Pages
             }
             else
             {
-                errorMessage = "Unable to delete manufacturer.";
+                errorMessage = await response.Content.ReadAsStringAsync();
+
+                if (string.IsNullOrWhiteSpace(errorMessage))
+                    errorMessage = "Unable to delete manufacturer.";
             }
         }
 
         private async Task EditManufacturer(int manufacturerId)
         {
+            errorMessage = null;
+
             if (manufacturers == null) return;
             manufacturerModal?.Manufacturer = manufacturers.FirstOrDefault(m => m.ManufacturerId == manufacturerId, new());
             OpenModal();

@@ -22,10 +22,11 @@ namespace VehicleCategoryManager.Client.Pages
             {
                 vehicles = await Http.GetFromJsonAsync<List<VehicleDTO>>("api/Vehicle") ?? new();
                 errorMessage = null;
+                loadErrorMessage = null;
             }
             catch (HttpRequestException)
             {
-                errorMessage = "Unable to load vehicles.";
+                loadErrorMessage = "Unable to load vehicles.";
             }
         }
 
@@ -38,12 +39,17 @@ namespace VehicleCategoryManager.Client.Pages
             }
             else
             {
-                errorMessage = "Unable to delete vehicle.";
+                errorMessage = await response.Content.ReadAsStringAsync();
+
+                if (string.IsNullOrWhiteSpace(errorMessage))
+                    errorMessage = "Unable to delete vehicle.";
             }
         }
 
         private async Task EditVehicle(int vehicleId)
         {
+            errorMessage = null;
+
             if (vehicles == null) return;
             vehicleModal?.Vehicle = vehicles.FirstOrDefault(v => v.VehicleId == vehicleId, new());
             OpenModal();

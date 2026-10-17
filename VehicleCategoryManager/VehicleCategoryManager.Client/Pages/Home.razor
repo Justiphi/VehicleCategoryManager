@@ -16,9 +16,9 @@
 {
     <p>Loading vehicles...</p>
 }
-else if (!string.IsNullOrEmpty(errorMessage))
+else if (!string.IsNullOrEmpty(loadErrorMessage))
 {
-    <p class="text-danger">@errorMessage</p>
+    <p class="text-danger">@loadErrorMessage</p>
 }
 else if (vehicles.Count == 0)
 {
@@ -70,14 +70,20 @@ else
                     </td>
                     <td>
                         <button class="btn btn-primary" @onclick="() => EditVehicle(vehicle.VehicleId)">Edit</button>
-                        <button class="btn btn-danger" @onclick="() => DeleteVehicle(vehicle.VehicleId)">Delete</button>
+                        <button class="btn btn-danger" @onclick="() => PromptDelete(vehicle.VehicleId)">Delete</button>
                     </td>
                 </tr>
             }
         </tbody>
     </table>
+    @if(!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @errorMessage
+        </div>
+    }
 }
 
 
-<AddVehicleModal @ref="vehicleModal" @bind-IsOpen="isModalOpen"
-                 OnVehicleAdded="LoadVehicles" />
+<AddVehicleModal @ref="vehicleModal" @bind-IsOpen="isModalOpen" OnVehicleAdded="LoadVehicles" />
+<DeleteConfirmationModal @ref="deleteModal" @bind-IsOpen="isDeletionModalOpen" OnConfirmed="DeleteVehicle" />

@@ -16,9 +16,9 @@
 {
     <p>Loading Manufacturers...</p>
 }
-else if (!string.IsNullOrEmpty(errorMessage))
+else if (!string.IsNullOrEmpty(loadErrorMessage))
 {
-    <p class="text-danger">@errorMessage</p>
+    <p class="text-danger">@loadErrorMessage</p>
 }
 else if (manufacturers.Count == 0)
 {
@@ -44,14 +44,20 @@ else
                     <td>@manufacturer.ManufacturerName</td>
                     <td>
                         <button class="btn btn-primary" @onclick="() => EditManufacturer(manufacturer.ManufacturerId)">Edit</button>
-                        <button class="btn btn-danger" @onclick="() => DeleteManufacturer(manufacturer.ManufacturerId)">Delete</button>
+                        <button class="btn btn-danger" @onclick="() => PromptDelete(manufacturer.ManufacturerId)">Delete</button>
                     </td>
                 </tr>
             }
         </tbody>
     </table>
+    @if(!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @errorMessage
+        </div>
+    }
 }
 
 
-<AddManufacturerModal @ref="manufacturerModal" @bind-IsOpen="isModalOpen"
-                 OnManufacturerAdded="LoadManufacturers" />
+<AddManufacturerModal @ref="manufacturerModal" @bind-IsOpen="isModalOpen" OnManufacturerAdded="LoadManufacturers" />
+<DeleteConfirmationModal @ref="deleteModal" @bind-IsOpen="isDeletionModalOpen" OnConfirmed="DeleteManufacturer" />

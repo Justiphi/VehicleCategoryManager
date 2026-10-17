@@ -21,12 +21,21 @@ namespace VehicleCategoryManager.Client.Pages
             try
             {
                 weightClasses = await Http.GetFromJsonAsync<List<WeightClassDTO>>("api/WeightClass") ?? new();
+                loadErrorMessage = null;
                 errorMessage = null;
             }
             catch (HttpRequestException)
             {
-                errorMessage = "Unable to load weight classes.";
+                loadErrorMessage = "Unable to load weight classes.";
             }
+        }
+
+        protected override async Task PromptDelete(int recordId)
+        {
+            var record = weightClasses.Find(v => v.VehicleWeightClassId == recordId);
+            deleteModal.ConfirmationMessage = $"Are you sure you want to delete: {record.VehicleWeightClassName}?\nThe surrounding records will expand to fill the gap.";
+
+            await base.PromptDelete(recordId);
         }
 
         private async Task DeleteWeightClass(int weightclassId)
@@ -38,12 +47,17 @@ namespace VehicleCategoryManager.Client.Pages
             }
             else
             {
-                errorMessage = "Unable to delete weightclass.";
+                errorMessage = await response.Content.ReadAsStringAsync();
+
+                if (string.IsNullOrWhiteSpace(errorMessage))
+                    errorMessage = "Unable to delete weight class.";
             }
         }
 
         private async Task EditWeightClass(int weightClassId)
         {
+            errorMessage = null;
+
             if (weightClasses == null) return;
             weightclassModal?.WeightClass = weightClasses.FirstOrDefault(wc => wc.VehicleWeightClassId == weightClassId, new());
             OpenModal();

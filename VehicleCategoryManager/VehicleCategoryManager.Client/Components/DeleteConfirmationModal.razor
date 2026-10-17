@@ -1,0 +1,59 @@
+﻿@if (IsOpen)
+{
+    <div class="modal-backdrop fade show"></div>
+
+    <div class="modal fade show d-block"
+         tabindex="-1"
+         role="dialog"
+         aria-modal="true">
+         
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>Delete Record?</h5>
+                </div>
+
+                <div class="modal-body">
+                    <span style="white-space: pre-line;">@ConfirmationMessage</span>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Close">
+                        Cancel
+                    </button>
+
+                    <button type="submit" class="btn btn-danger" @onclick="Confirm">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnConfirmed { get; set; }
+
+    public string ConfirmationMessage { get; set; } = "Are you sure you want to delete this record?";
+    public int RecordId { get; set; }
+
+    private async Task Confirm()
+    {
+        await OnConfirmed.InvokeAsync(RecordId);
+        await IsOpenChanged.InvokeAsync(false);
+    }
+
+    private async Task Close()
+    {
+        await IsOpenChanged.InvokeAsync(false);
+    }
+}
