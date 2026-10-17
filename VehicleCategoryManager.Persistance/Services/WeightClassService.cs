@@ -165,20 +165,9 @@ namespace VehicleCategoryManager.Persistance.Services
         {            
             var classes = context.VehicleWeightClasses.Where(wc => wc.VehicleWeightClassId != weightClass.VehicleWeightClassId);
 
-            //first class
-            if (weightClass.MinWeightKg == 0)
-            {
-                var nextClass = classes.OrderBy(wc => wc.MinWeightKg).FirstOrDefault();
-                if (nextClass != null && weightClass.MaxWeightKg != null)
-                {
-                    nextClass.MinWeightKg = weightClass.MaxWeightKg.Value;
-                    context.VehicleWeightClasses.Update(nextClass);
-                }
-            }
-            else
-            {
-                //if this is the first class, there is no previous class to adjust
-                var previousClass = classes.Where(wc => wc.MaxWeightKg > weightClass.MinWeightKg).OrderByDescending(wc => wc.MaxWeightKg).FirstOrDefault();
+            if(weightClass.MinWeightKg != 0)
+            { 
+                var previousClass = classes.Where(wc => wc.MinWeightKg < weightClass.MinWeightKg).OrderByDescending(wc => wc.MinWeightKg).FirstOrDefault();
                 if (previousClass != null)
                 {
                     previousClass.MaxWeightKg = weightClass.MinWeightKg;
@@ -186,32 +175,9 @@ namespace VehicleCategoryManager.Persistance.Services
                 }
             }
 
-            //last class
-            if(weightClass.MaxWeightKg == null)
+            if(weightClass.MaxWeightKg != null)
             {
-                VehicleWeightClass previousClass;
-                
-                if(adding)
-                {
-                    //Adding so alter previous max class
-                    previousClass = classes.Where(wc => wc.MaxWeightKg == null).FirstOrDefault();
-                }
-                else
-                {
-                    //Editing so find max with value
-                    previousClass = classes.OrderByDescending(wc => wc.MaxWeightKg).FirstOrDefault();
-                }
-
-                if (previousClass != null)
-                {
-                    previousClass.MaxWeightKg = weightClass.MinWeightKg;
-                    context.VehicleWeightClasses.Update(previousClass);
-                }
-            }
-            else
-            {
-                //if this is the last class, there is no next class to adjust
-                var nextClass = classes.Where(wc => wc.MinWeightKg < weightClass.MaxWeightKg).OrderByDescending(wc => wc.MinWeightKg).FirstOrDefault();
+                var nextClass = classes.Where(wc => wc.MaxWeightKg > weightClass.MaxWeightKg || wc.MaxWeightKg == null).OrderBy(wc => wc.MaxWeightKg == null).ThenBy(wc => wc.MaxWeightKg).FirstOrDefault();
                 if (nextClass != null)
                 {
                     nextClass.MinWeightKg = weightClass.MaxWeightKg.Value;

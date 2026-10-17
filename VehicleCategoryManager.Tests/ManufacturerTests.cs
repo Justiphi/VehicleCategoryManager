@@ -22,6 +22,8 @@ namespace VehicleCategoryManager.Tests
             var manufacturer = new Manufacturer("Porsche");
             var added = _manufacturerService.AddManufacturer(manufacturer);
             Assert.NotEqual(0, added);
+            var newManufacturer = _manufacturerService.GetManufacturerById(added);
+            Assert.NotNull(newManufacturer);
         }
 
         [Fact]

@@ -1,4 +1,5 @@
 ﻿@page "/"
+@inherits BasePage
 @using VehicleCategoryManager.Client.DTOs
 @using VehicleCategoryManager.Client.Components
 @inject HttpClient Http
@@ -28,16 +29,36 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>Owner</th>
-                <th>Year</th>
-                <th>Manufacturer</th>
-                <th>Weight (kg)</th>
-                <th>Weight Category</th>
+                <th>
+                    <button class="sort-header" @onclick="() => SortBy(nameof(VehicleDTO.Owner))">
+                        Owner @SortIcon(nameof(VehicleDTO.Owner))
+                    </button>
+                </th>
+                <th>
+                    <button class="sort-header" @onclick="() => SortBy(nameof(VehicleDTO.Year))">
+                        Year @SortIcon(nameof(VehicleDTO.Year))
+                    </button>
+                </th>
+                <th>
+                    <button class="sort-header" @onclick="() => SortBy(nameof(VehicleDTO.ManufacturerName))">
+                        Manufacturer @SortIcon(nameof(VehicleDTO.ManufacturerName))
+                    </button>
+                </th>
+                <th>
+                    <button class="sort-header" @onclick="() => SortBy(nameof(VehicleDTO.WeightKg))">
+                        Weight (kg) @SortIcon(nameof(VehicleDTO.WeightKg))
+                    </button>
+                </th>
+                <th>
+                    <button class="sort-header" @onclick="() => SortBy(nameof(VehicleDTO.WeightKg))">
+                        Weight Category @SortIcon(nameof(VehicleDTO.WeightKg))
+                    </button>
+                </th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var vehicle in vehicles)
+            @foreach (var vehicle in SortedVehicles)
             {
                 <tr>
                     <td>@vehicle.Owner</td>
@@ -60,53 +81,3 @@ else
 
 <AddVehicleModal @ref="vehicleModal" @bind-IsOpen="isModalOpen"
                  OnVehicleAdded="LoadVehicles" />
-
-
-@code {
-
-    private AddVehicleModal? vehicleModal { get; set; }
-
-    List<VehicleDTO>? vehicles;
-    private string? errorMessage; 
-    private bool isModalOpen;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadVehicles();
-    }
-
-    private async Task LoadVehicles()
-    {
-        try
-        {
-            vehicles = await Http.GetFromJsonAsync<List<VehicleDTO>>("api/Vehicle") ?? new();
-            errorMessage = null;
-        }
-        catch (HttpRequestException)
-        {
-            errorMessage = "Unable to load vehicles.";
-        }
-    }
-
-    private async Task DeleteVehicle(int vehicleId)
-    {
-        HttpResponseMessage response = await Http.DeleteAsync($"api/Vehicle/{vehicleId}");
-        if (response.IsSuccessStatusCode)
-        {
-            await LoadVehicles();
-        }
-        else
-        {
-            errorMessage = "Unable to delete vehicle.";
-        }
-    }
-
-    private async Task EditVehicle(int vehicleId)
-    {
-        if (vehicles == null) return;
-        vehicleModal?.Vehicle = vehicles.FirstOrDefault(v => v.VehicleId == vehicleId, new());
-        OpenModal();
-    }
-
-    private void OpenModal() => isModalOpen = true;
-}

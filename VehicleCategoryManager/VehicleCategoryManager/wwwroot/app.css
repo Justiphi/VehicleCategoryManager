@@ -130,3 +130,15 @@ h1:focus {
         border-color: #0d6efd;
         background: #e7f1ff;
     }
+
+.sort-header {
+    all: unset;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+}
+
+    .sort-header:focus-visible {
+        outline: 2px solid var(--bs-primary);
+        outline-offset: 2px;
+    }

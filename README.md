@@ -134,6 +134,7 @@ Testing uses an in-memory SQLLite database, this prevents the requirement of a s
 
 I chose this for development as I am most comfortable with C# and Razor syntax, choosing the SPA structure enforces me to use a client side structure with API for demonstration of skills relating to API devlopment.
 
+
 ## Database Design:
 The database consists of the following tables:
 - VehicleWeightClass: This table contains the category information for each vehicle category, including the min and max weight values, the category name, and the icon associated with the category.
@@ -195,3 +196,4 @@ I chose this approach to ensure a more readable and user friendly experience whe
   - This would simplify the application and not require an API endpoint as the web page is rendered entirely on the server before being sent to the client. 
   - Server is also more secure against scripting and injection attacks as all code is stored and executed on the server, though more vulnerable to DoS attacks as it maintains an active connection with each client.
 - I have decided to use SVGs as my icons, this is due to the low file size and high scalability, it also gives me the option to copy the file and change colours so that I may have more icons without a large amount of additional work.
+- When performing smoke tests, I have added new tests where I have noticed issues.

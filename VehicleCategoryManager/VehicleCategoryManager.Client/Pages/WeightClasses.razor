@@ -1,4 +1,5 @@
 ﻿@page "/weightclasses"
+@inherits BasePage
 @using VehicleCategoryManager.Client.DTOs
 @using VehicleCategoryManager.Client.Components
 @inject HttpClient Http
@@ -28,15 +29,27 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>Class Name</th>
+                <th>
+                    <button class="sort-header" @onclick="() => SortBy(nameof(WeightClassDTO.VehicleWeightClassName))">
+                        Name @SortIcon(nameof(WeightClassDTO.VehicleWeightClassName))
+                    </button>
+                </th>
                 <th>Icon</th>
-                <th>Min Weight (kg)</th>
-                <th>Max Weight (kg)</th>
+                <th>
+                    <button class="sort-header" @onclick="() => SortBy(nameof(WeightClassDTO.MinWeightKg))">
+                        Min Weight (kg) @SortIcon(nameof(WeightClassDTO.MinWeightKg))
+                    </button>
+                </th>
+                <th>
+                    <button class="sort-header" @onclick="() => SortBy(nameof(WeightClassDTO.MaxWeightKg))">
+                        Max Weight (kg) @SortIcon(nameof(WeightClassDTO.MaxWeightKg))
+                    </button>
+                </th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var weightClass in weightClasses)
+            @foreach (var weightClass in SortedWeightClasses)
             {
                 <tr>
                     <td>@weightClass.VehicleWeightClassName</td>
@@ -62,53 +75,3 @@ else
 
 <AddWeightClassModal @ref="weightclassModal" @bind-IsOpen="isModalOpen"
                  OnWeightClassAdded="LoadWeightClasses" />
-
-
-
-@code {
-    private AddWeightClassModal? weightclassModal { get; set; }
-
-    List<WeightClassDTO>? weightClasses;
-    private string? errorMessage; 
-    private bool isModalOpen;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadWeightClasses();
-    }
-
-    private async Task LoadWeightClasses()
-    {
-        try
-        {
-            weightClasses = await Http.GetFromJsonAsync<List<WeightClassDTO>>("api/WeightClass") ?? new();
-            errorMessage = null;
-        }
-        catch (HttpRequestException)
-        {
-            errorMessage = "Unable to load weight classes.";
-        }
-    }
-
-    private async Task DeleteWeightClass(int weightclassId)
-    {
-        HttpResponseMessage response = await Http.DeleteAsync($"api/WeightClass/{weightclassId}");
-        if (response.IsSuccessStatusCode)
-        {
-            await LoadWeightClasses();
-        }
-        else
-        {
-            errorMessage = "Unable to delete weightclass.";
-        }
-    }
-
-    private async Task EditWeightClass(int weightClassId)
-    {
-        if (weightClasses == null) return;
-        weightclassModal?.WeightClass = weightClasses.FirstOrDefault(v => v.VehicleWeightClassId == weightClassId, new());
-        OpenModal();
-    }
-
-    private void OpenModal() => isModalOpen = true;
-}

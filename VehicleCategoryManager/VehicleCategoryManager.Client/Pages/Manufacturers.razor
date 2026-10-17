@@ -1,0 +1,57 @@
+﻿@page "/manufacturers"
+@inherits BasePage
+@using VehicleCategoryManager.Client.DTOs
+@using VehicleCategoryManager.Client.Components
+@inject HttpClient Http
+
+<PageTitle>Manufacturers</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="mb-0">Manufacturers!</h1>
+    <button class="btn btn-primary" @onclick="OpenModal">
+        Add Manufacturer
+    </button>
+</div>
+@if (manufacturers == null)
+{
+    <p>Loading Manufacturers...</p>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p class="text-danger">@errorMessage</p>
+}
+else if (manufacturers.Count == 0)
+{
+    <p>No manufacturers found.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    <button class="sort-header" @onclick="() => SortBy(nameof(ManufacturerDTO.ManufacturerName))">
+                        Manufacturer Name @SortIcon(nameof(ManufacturerDTO.ManufacturerName))
+                    </button>
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var manufacturer in SortedManufacturers)
+            {
+                <tr>
+                    <td>@manufacturer.ManufacturerName</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => EditManufacturer(manufacturer.ManufacturerId)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => DeleteManufacturer(manufacturer.ManufacturerId)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+<AddManufacturerModal @ref="manufacturerModal" @bind-IsOpen="isModalOpen"
+                 OnManufacturerAdded="LoadManufacturers" />

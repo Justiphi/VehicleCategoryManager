@@ -18,7 +18,7 @@ namespace VehicleCategoryManager.Tests
         public void DeleteWeightClass_WhenCalled_AdjustsAdjacentWeightClasses()
         {
             // Get medium weight class (seeded Id 2)
-            var mediumWeightClass = _database.Context.VehicleWeightClasses.FirstOrDefault(wc => wc.VehicleWeightClassId == 2);
+            var mediumWeightClass = _weightClassService.GetWeightClassById(2);
             Assert.NotNull(mediumWeightClass);
 
             var deleted = _weightClassService.DeleteWeightClass(mediumWeightClass.VehicleWeightClassId);
@@ -26,16 +26,16 @@ namespace VehicleCategoryManager.Tests
             mediumWeightClass = null;
 
             // ensure weight class is deleted
-            mediumWeightClass = _database.Context.VehicleWeightClasses.FirstOrDefault(wc => wc.VehicleWeightClassId == 2);
+            mediumWeightClass = _weightClassService.GetWeightClassById(2);
             Assert.Null(mediumWeightClass);
 
             //small weight class should now have a max weight of 1500
-            var smallWeightClass = _database.Context.VehicleWeightClasses.FirstOrDefault(wc => wc.VehicleWeightClassId == 1);
+            var smallWeightClass = _weightClassService.GetWeightClassById(1);
             Assert.NotNull(smallWeightClass);
             Assert.Equal(1500, smallWeightClass.MaxWeightKg);
 
             // large weight class should now have a min weight of 1500
-            var largeWeightClass = _database.Context.VehicleWeightClasses.FirstOrDefault(wc => wc.VehicleWeightClassId == 3);
+            var largeWeightClass = _weightClassService.GetWeightClassById(3);
             Assert.NotNull(largeWeightClass);
             Assert.Equal(1500, largeWeightClass.MinWeightKg);
         }
@@ -53,30 +53,100 @@ namespace VehicleCategoryManager.Tests
             Assert.Null(addedWeightClass.MaxWeightKg);
 
             //heavy class should limit to new weight class
-            var heavyWeightClass = _database.Context.VehicleWeightClasses.FirstOrDefault(wc => wc.VehicleWeightClassId == 3);
+            var heavyWeightClass = _weightClassService.GetWeightClassById(3);
             Assert.NotNull(heavyWeightClass);
             Assert.Equal(5000, heavyWeightClass.MaxWeightKg);
         }
 
         [Fact]
-        public void UpdateWeightClass_WhenCalled_AdjustsAdjacentWeightClasses()
+        public void UpdateWeightClass_WhenExpanding_AdjustsAdjacentWeightClasses()
         {
-            var medWeightClass = _database.Context.VehicleWeightClasses.FirstOrDefault(wc => wc.VehicleWeightClassId == 2);
+            var medWeightClass = _weightClassService.GetWeightClassById(2);
             Assert.NotNull(medWeightClass);
             medWeightClass.MinWeightKg = 250;
             medWeightClass.MaxWeightKg = 3000;
             var updated = _weightClassService.UpdateWeightClass(medWeightClass);
             Assert.True(updated);
 
-
             //heavy class min weight should be adjusted to med weight class max weight
-            var heavyWeightClass = _database.Context.VehicleWeightClasses.FirstOrDefault(wc => wc.VehicleWeightClassId == 3);
+            var heavyWeightClass = _weightClassService.GetWeightClassById(3);
             Assert.NotNull(heavyWeightClass);
             Assert.Equal(3000, heavyWeightClass.MinWeightKg);
+            Assert.Equal(null, heavyWeightClass.MaxWeightKg);
 
             //light class max weight should be adjusted to med weight class min weight
-            var lightWeightClass = _database.Context.VehicleWeightClasses.FirstOrDefault(wc => wc.VehicleWeightClassId == 1);
+            var lightWeightClass = _weightClassService.GetWeightClassById(1);
             Assert.NotNull(lightWeightClass);
+            Assert.Equal(0, lightWeightClass.MinWeightKg);
+            Assert.Equal(250, lightWeightClass.MaxWeightKg);
+        }
+
+        [Fact]
+        public void UpdateWeightClass_WhenShrinking_AdjustsAdjacentWeightClasses()
+        {
+            var medWeightClass = _weightClassService.GetWeightClassById(2);
+            Assert.NotNull(medWeightClass);
+            medWeightClass.MinWeightKg = 750;
+            medWeightClass.MaxWeightKg = 2000;
+            var updated = _weightClassService.UpdateWeightClass(medWeightClass);
+            Assert.True(updated);
+
+            //heavy class min weight should be adjusted to med weight class max weight
+            var heavyWeightClass = _weightClassService.GetWeightClassById(3);
+            Assert.NotNull(heavyWeightClass);
+            Assert.Equal(2000, heavyWeightClass.MinWeightKg);
+            Assert.Equal(null, heavyWeightClass.MaxWeightKg);
+
+            //light class max weight should be adjusted to med weight class min weight
+            var lightWeightClass = _weightClassService.GetWeightClassById(1);
+            Assert.NotNull(lightWeightClass);
+            Assert.Equal(0, lightWeightClass.MinWeightKg);
+            Assert.Equal(750, lightWeightClass.MaxWeightKg);
+        }
+
+        [Fact]
+        public void UpdateWeightClass_ShiftForward_AdjustsAdjacentWeightClasses()
+        {
+            var medWeightClass = _weightClassService.GetWeightClassById(2);
+            Assert.NotNull(medWeightClass);
+            medWeightClass.MinWeightKg = 750;
+            medWeightClass.MaxWeightKg = 3000;
+            var updated = _weightClassService.UpdateWeightClass(medWeightClass);
+            Assert.True(updated);
+
+            //heavy class min weight should be adjusted to med weight class max weight
+            var heavyWeightClass = _weightClassService.GetWeightClassById(3);
+            Assert.NotNull(heavyWeightClass);
+            Assert.Equal(3000, heavyWeightClass.MinWeightKg);
+            Assert.Equal(null, heavyWeightClass.MaxWeightKg);
+
+            //light class max weight should be adjusted to med weight class min weight
+            var lightWeightClass = _weightClassService.GetWeightClassById(1);
+            Assert.NotNull(lightWeightClass);
+            Assert.Equal(0, lightWeightClass.MinWeightKg);
+            Assert.Equal(750, lightWeightClass.MaxWeightKg);
+        }
+
+        [Fact]
+        public void UpdateWeightClass_ShiftBack_AdjustsAdjacentWeightClasses()
+        {
+            var medWeightClass = _weightClassService.GetWeightClassById(2);
+            Assert.NotNull(medWeightClass);
+            medWeightClass.MinWeightKg = 250;
+            medWeightClass.MaxWeightKg = 2000;
+            var updated = _weightClassService.UpdateWeightClass(medWeightClass);
+            Assert.True(updated);
+
+            //heavy class min weight should be adjusted to med weight class max weight
+            var heavyWeightClass = _weightClassService.GetWeightClassById(3);
+            Assert.NotNull(heavyWeightClass);
+            Assert.Equal(2000, heavyWeightClass.MinWeightKg);
+            Assert.Equal(null, heavyWeightClass.MaxWeightKg);
+
+            //light class max weight should be adjusted to med weight class min weight
+            var lightWeightClass = _weightClassService.GetWeightClassById(1);
+            Assert.NotNull(lightWeightClass);
+            Assert.Equal(0, lightWeightClass.MinWeightKg);
             Assert.Equal(250, lightWeightClass.MaxWeightKg);
         }
 
@@ -102,7 +172,7 @@ namespace VehicleCategoryManager.Tests
             // Delete medium and heavy classes first
             _weightClassService.DeleteWeightClass(2);
             _weightClassService.DeleteWeightClass(3);
-            var lightWeightClass = _database.Context.VehicleWeightClasses.FirstOrDefault(wc => wc.VehicleWeightClassId == 1);
+            var lightWeightClass = _weightClassService.GetWeightClassById(1);
             Assert.NotNull(lightWeightClass);
             Assert.Equal(0, lightWeightClass.MinWeightKg);
             Assert.Null(lightWeightClass.MaxWeightKg);
