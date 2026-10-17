@@ -10,13 +10,18 @@ namespace VehicleCategoryManager.Persistance.Services
     {
         public VehicleService(DataContextFactory contextFactory) : base(contextFactory) { }
 
-        public bool ValidateRecord(DataContext context, Vehicle vehicle)
+        private bool ValidateRecord(DataContext context, Vehicle vehicle)
         {
             List<string> errorList = new();
 
             if(vehicle.WeightKg <= 0)
             {
                 errorList.Add("Weight must be a positive value.");
+            }
+
+            if(vehicle.ManufacturerId <= 0)
+            {
+                errorList.Add("Manufacturer must be set.");
             }
 
             if(vehicle.Year.ToString().Length != 4)

@@ -1,14 +1,19 @@
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using VehicleCategoryManager;
 using System.Net.Http;
+using VehicleCategoryManager;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
 builder.Services.AddScoped(sp =>
-    new HttpClient
+{
+    var navigation = sp.GetRequiredService<NavigationManager>();
+
+    return new HttpClient
     {
-        BaseAddress = new Uri("https://localhost:7076/")
-    });
+        BaseAddress = new Uri(navigation.BaseUri)
+    };
+});
 
 await builder.Build().RunAsync();

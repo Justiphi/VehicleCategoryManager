@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using VehicleCategoryManager.Components;
 using VehicleCategoryManager.Persistance;
@@ -13,10 +14,14 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
 builder.Services.AddScoped(sp =>
-    new HttpClient
+{
+    var navigation = sp.GetRequiredService<NavigationManager>();
+
+    return new HttpClient
     {
-        BaseAddress = new Uri("https://localhost:7076/")
-    });
+        BaseAddress = new Uri(navigation.BaseUri)
+    };
+});
 
 string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string not found.");

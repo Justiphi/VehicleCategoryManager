@@ -24,6 +24,7 @@ Vehicle Classification Management web application for CreditWorks technical test
 	- To use this connection string, Replace SERVER, USER, and PASSWORD with your appropriate server/credentials.
 	- The user should have appropriate permissons to create the database if it does not exist.
 	- The database name defaults to VehicleManagementSystem, this can be changed by replacing the value in the connection string.
+	- If you plan to run the application through docker using a local db, use `host.docker.internal` as SERVER, this will route to your `localhost`
 2. keep this connection string handy, it will be used to run the application.
 
 #### If planning to run through Visual Studio in debug mode:
@@ -44,7 +45,7 @@ Create a file called `appsettings.Development.json` in the folder `VehicleCatego
 
 
 ## Database Creation/Migration Instructions:
-1. Open a terminal and navigate to the project root directory.
+1. Open a terminal and navigate to the project root directory. *(The folder containing the .sln file)*
 2. Run the following command.
 	```bash
 	dotnet ef database update --project .\VehicleCategoryManager.Persistance\ --startup-project .\VehicleCategoryManager\VehicleCategoryManager\
@@ -53,15 +54,18 @@ Create a file called `appsettings.Development.json` in the folder `VehicleCatego
 ## How to Build:
 Build steps are different by how you plan to run the application:
 
-### Docker
-No steps are required for docker as the application builds with the container.
+### Docker (Easy
+Run the following command from the root directory. *(The folder containing the .sln file)*
+  ```bash
+  docker build --build-arg "ConnectionStrings__DefaultConnection=CONNECTIONSTRING" -t vehicle-category-manager .
+  ```
 
 ### Visual Studio
 1. Open the solution in Visual Studio.
 2. In the toolbar click Build->Rebuild Solution.
 
 ### Command Line
-Run the following command from the root directory. (the folder containing the .sln file)
+Run the following command from the root directory. *(the folder containing the .sln file)*
   ```bash
   dotnet build
   ```
@@ -76,12 +80,12 @@ Then follow one of the following methods to run the application:
 
 ### Docker: (Easy)
 1. Ensure Docker Desktop is installed and running.
-2. Open a terminal and navigate to the project root directory.
+2. Open a terminal and navigate to the project root directory. *(The folder containing the .sln file)*
 3. Run the following command to build and run the application in a Docker container:
    ```bash
-   docker-compose up --build
+   docker run -d --name vehicle-category-manager -p 7076:7076 --add-host=host.docker.internal:host-gateway -e "ConnectionStrings__DefaultConnection=CONNECTIONSTRING" vehicle-category-manager
    ```
-4. The application will be accessible at `https://localhost:7076` in your web browser.
+4. The application will be accessible at `http://localhost:7076` in your web browser.
 
 This will run a production build that automatically applies any pending migrations to the database.
 
@@ -89,22 +93,24 @@ This will run a production build that automatically applies any pending migratio
 1. Open the solution in Visual Studio.
 2. Ensure the VehicleCategoryManager project is set as the startup project.
   - This should be bold in the Solution Explorer, if not right click on the project and select "Set as Startup Project".
-3. Set the correct launch profile (IIS Express or VehicleCategoryManager) in the toolbar.
+3. Set the correct launch profile (http or https) in the toolbar. *(http is prefered in this instance)*
 4. Set the correct configuration (Debug or Release) in the toolbar.
 5. Press F5 or click the "Start" button to run the application.
-6. The application will be accessible at `https://localhost:7076` in your web browser.
+6. The application will be accessible at `http://localhost:7076` or `http://localhost:7075` in your web browser.
 
 ### Command Line:
-1. Open a terminal and navigate to the project root directory. (the folder containing the .sln file)
+1. Open a terminal and navigate to the project root directory. (The folder containing the .sln file)
 2. Run the following command with your connection string from **Configuration Steps** to run the application:
    ```bash
-   dotnet run --project VehicleCategoryManager --launch-profile https -- --ConnectionStrings:DefaultConnection="CONNECTIONSTRING"
+   dotnet run --project VehicleCategoryManager --launch-profile http -- --ConnectionStrings:DefaultConnection="CONNECTIONSTRING"
    ```
    - For Release mode, use the following instead:
    ```bash
-   dotnet run --project VehicleCategoryManager -c Release --launch-profile https -- --ConnectionStrings:DefaultConnection="CONNECTIONSTRING"
+   dotnet run --project VehicleCategoryManager -c Release --launch-profile http -- --ConnectionStrings:DefaultConnection="CONNECTIONSTRING"
    ```
-3. The application will be accessible at `https://localhost:7076` in your web browser.
+3. The application will be accessible at `http://localhost:7076` in your web browser.
+
+**Note:** *changing launch profile to https will make the application accessable from https://localhost:7075 (This may cause issues with untrusted dev ssl certificates)*
 
 
 ## How to Execute Tests:
@@ -120,7 +126,7 @@ Option 2:
   - Select "Run Tests" to execute all tests.
 
 ### In Command Line:
-- Open a terminal and navigate to the test project directory. (`VehcileCategoryManager.Tests`) *This will not work outside of this folder*
+- Open a terminal and navigate to the root directory. *(The folder containing the .sln file)*
 - Run the following command to execute all tests:
   ```bash
   dotnet test

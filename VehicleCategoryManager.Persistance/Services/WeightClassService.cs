@@ -122,6 +122,10 @@ namespace VehicleCategoryManager.Persistance.Services
                 }
 
                 weightClassInstanced = context.VehicleWeightClasses.Find(weightClass.VehicleWeightClassId);
+                if(weightClassInstanced == null)
+                {
+                    throw new InvalidDataException("Cannot Update: Cannot find Weight Class.");
+                }
 
                 //ensure we are not removing maximum
                 if(weightClassInstanced.MaxWeightKg == null && weightClass.MaxWeightKg != null)

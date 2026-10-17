@@ -8,7 +8,7 @@ namespace VehicleCategoryManager.Persistance.Services
 
         public ManufacturerService(DataContextFactory contextFactory) : base(contextFactory) { }
 
-        public bool ValidateRecord(DataContext context, Manufacturer manufacturer)
+        private bool ValidateRecord(DataContext context, Manufacturer manufacturer)
         {
             List<string> errorList = new();
 

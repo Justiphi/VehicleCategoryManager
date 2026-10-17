@@ -27,7 +27,7 @@ namespace VehicleCategoryManager.Tests
         [Fact]
         public void AddVehicle_WhenCalledWithFutureYear_CannotAdd()
         {
-            //cannot add year without 4 digits
+            //cannot add year from future
             var vehicle = new Vehicle(500, "owner", (short)(DateTime.Now.Year + 1), 1);
             Assert.ThrowsAny<InvalidDataException>(() =>
                 _vehicleService.AddVehicle(vehicle)
@@ -43,6 +43,16 @@ namespace VehicleCategoryManager.Tests
             Assert.NotEqual(0, added);
             var testVehicle = _vehicleService.GetVehicleById(added);
             Assert.NotNull(testVehicle);
+        }
+
+        [Fact]
+        public void AddVehicle_WhenCalledWithNoManufacturer_CannotAdd()
+        {
+            //cannot add 0 manufacturer
+            var vehicle = new Vehicle(500, "owner", (short)DateTime.Now.Year, 0);
+            Assert.ThrowsAny<InvalidDataException>(() =>
+                _vehicleService.AddVehicle(vehicle)
+            );
         }
 
         [Fact]
