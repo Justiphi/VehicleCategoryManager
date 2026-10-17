@@ -156,13 +156,14 @@
     private void LimitDecimals(Func<decimal?> getValue, Action<decimal?> setValue)
     {
         var value = getValue();
-    
+
         if (value.HasValue)
             setValue(Math.Round(value.Value, 2));
     }
-    
+
     private async Task Close()
     {
+        WeightClass = new();
         if(isEditMode)
         {
             await OnWeightClassAdded.InvokeAsync();

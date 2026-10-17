@@ -8,7 +8,7 @@ Vehicle Classification Management web application for CreditWorks technical test
 - .NET ef tools (for applying database migrations)
   - If not installed run `dotnet tool install --global dotnet-ef` in the terminal.
 - SQL Server (express used in development, 2019 and newer supported)
-  - This can be installed locally or run in a Docker Container, ensure the connection string used is correct when running the application.
+  - This can be installed locally or run in a Docker Container. *(If using a docker container, ensure the connection string used is correct when running the application.)*
 
 ## Optional Software:
 - Docker Desktop (for running application in a container)
