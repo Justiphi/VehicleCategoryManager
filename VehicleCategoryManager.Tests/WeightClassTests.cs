@@ -48,7 +48,7 @@ namespace VehicleCategoryManager.Tests
             Assert.NotEqual(0, added);
             var addedWeightClass = _weightClassService.GetWeightClassById(added);
             Assert.NotNull(addedWeightClass);
-            Assert.Equal(addedWeightClass.VehicleWeightClassName, "Extra Heavy");
+            Assert.Equal("Extra Heavy", addedWeightClass.VehicleWeightClassName);
             Assert.Equal(5000, addedWeightClass.MinWeightKg);
             Assert.Null(addedWeightClass.MaxWeightKg);
 
@@ -72,7 +72,7 @@ namespace VehicleCategoryManager.Tests
             var heavyWeightClass = _weightClassService.GetWeightClassById(3);
             Assert.NotNull(heavyWeightClass);
             Assert.Equal(3000, heavyWeightClass.MinWeightKg);
-            Assert.Equal(null, heavyWeightClass.MaxWeightKg);
+            Assert.Null(heavyWeightClass.MaxWeightKg);
 
             //light class max weight should be adjusted to med weight class min weight
             var lightWeightClass = _weightClassService.GetWeightClassById(1);
@@ -95,7 +95,7 @@ namespace VehicleCategoryManager.Tests
             var heavyWeightClass = _weightClassService.GetWeightClassById(3);
             Assert.NotNull(heavyWeightClass);
             Assert.Equal(2000, heavyWeightClass.MinWeightKg);
-            Assert.Equal(null, heavyWeightClass.MaxWeightKg);
+            Assert.Null(heavyWeightClass.MaxWeightKg);
 
             //light class max weight should be adjusted to med weight class min weight
             var lightWeightClass = _weightClassService.GetWeightClassById(1);
@@ -118,7 +118,7 @@ namespace VehicleCategoryManager.Tests
             var heavyWeightClass = _weightClassService.GetWeightClassById(3);
             Assert.NotNull(heavyWeightClass);
             Assert.Equal(3000, heavyWeightClass.MinWeightKg);
-            Assert.Equal(null, heavyWeightClass.MaxWeightKg);
+            Assert.Null(heavyWeightClass.MaxWeightKg);
 
             //light class max weight should be adjusted to med weight class min weight
             var lightWeightClass = _weightClassService.GetWeightClassById(1);
@@ -141,7 +141,7 @@ namespace VehicleCategoryManager.Tests
             var heavyWeightClass = _weightClassService.GetWeightClassById(3);
             Assert.NotNull(heavyWeightClass);
             Assert.Equal(2000, heavyWeightClass.MinWeightKg);
-            Assert.Equal(null, heavyWeightClass.MaxWeightKg);
+            Assert.Null(heavyWeightClass.MaxWeightKg);
 
             //light class max weight should be adjusted to med weight class min weight
             var lightWeightClass = _weightClassService.GetWeightClassById(1);
@@ -258,6 +258,7 @@ namespace VehicleCategoryManager.Tests
             weightClass.MinWeightKg = 3000m;
             _weightClassService.UpdateWeightClass(weightClass);
             var medWeightClass = _weightClassService.GetWeightClassById(2);
+            Assert.NotNull(medWeightClass);
             Assert.Equal(3000, medWeightClass.MaxWeightKg);
 
 
@@ -266,6 +267,7 @@ namespace VehicleCategoryManager.Tests
             weightClass.MinWeightKg = 2000m;
             _weightClassService.UpdateWeightClass(weightClass);
             medWeightClass = _weightClassService.GetWeightClassById(2);
+            Assert.NotNull(medWeightClass);
             Assert.Equal(2000, medWeightClass.MaxWeightKg);
         }
 
@@ -279,12 +281,14 @@ namespace VehicleCategoryManager.Tests
             weightClass.MaxWeightKg = 250m;
             _weightClassService.UpdateWeightClass(weightClass);
             var medWeightClass = _weightClassService.GetWeightClassById(2);
+            Assert.NotNull(medWeightClass);
             Assert.Equal(250, medWeightClass.MinWeightKg);
 
             //check increase
             weightClass.MaxWeightKg = 750m;
             _weightClassService.UpdateWeightClass(weightClass);
             medWeightClass = _weightClassService.GetWeightClassById(2);
+            Assert.NotNull(medWeightClass);
             Assert.Equal(750, medWeightClass.MinWeightKg);
         }
 

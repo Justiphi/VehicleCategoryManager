@@ -5,7 +5,7 @@ namespace VehicleCategoryManager.Client.Pages
     public class BasePage : ComponentBase
     {
 
-        protected string SortColumn;
+        protected string SortColumn = string.Empty;
         protected bool SortAscending = true;
 
         protected string? errorMessage;

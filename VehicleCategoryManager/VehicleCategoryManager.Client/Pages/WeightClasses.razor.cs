@@ -8,7 +8,7 @@ namespace VehicleCategoryManager.Client.Pages
     {
         private AddWeightClassModal? weightclassModal { get; set; }
 
-        List<WeightClassDTO>? weightClasses;
+        List<WeightClassDTO> weightClasses = new();
 
         protected override async Task OnInitializedAsync()
         {
