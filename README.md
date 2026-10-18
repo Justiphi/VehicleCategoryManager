@@ -11,7 +11,7 @@ Vehicle Classification Management web application for CreditWorks technical test
   - This can be installed locally or run in a Docker Container. *(If using a docker container, ensure the connection string used is correct when running the application.)*
 
 ## Optional Software:
-- Docker Desktop (for running application in a container)
+- Docker (for running application in a container, docker desktop also works)
 
 ## Database Requirements:
 - SQL Server 2019 or newer
@@ -102,12 +102,17 @@ This will run a production build that automatically applies any pending migratio
 1. Open a terminal and navigate to the project root directory. (The folder containing the .sln file)
 2. Run the following command with your connection string from **Configuration Steps** to run the application:
    ```bash
-   dotnet run --project VehicleCategoryManager --launch-profile http -- --ConnectionStrings:DefaultConnection="CONNECTIONSTRING"
+   .\run-app.ps1 "CONNECTIONSTRING"
    ```
-   - For Release mode, use the following instead:
-   ```bash
-   dotnet run --project VehicleCategoryManager -c Release --launch-profile http -- --ConnectionStrings:DefaultConnection="CONNECTIONSTRING"
-   ```
+
+   **NOTE:** the following commands also work for this, the powershell script simply creates a shorthand for running in release mode.
+		```bash
+		dotnet run --project .\VehicleCategoryManager\VehicleCategoryManager\ --launch-profile http -- --ConnectionStrings:DefaultConnection="CONNECTIONSTRING"
+		```
+		- For Release mode, use the following instead:
+		```bash
+		dotnet run --project .\VehicleCategoryManager\VehicleCategoryManager\ -c Release --launch-profile http -- --ConnectionStrings:DefaultConnection="CONNECTIONSTRING"
+		```
 3. The application will be accessible at `http://localhost:7076` in your web browser.
 
 **Note:** *changing launch profile to https will make the application accessable from https://localhost:7075 (This may cause issues with untrusted dev ssl certificates)*
@@ -136,10 +141,19 @@ Option 2:
 # Design Notes:
 ## Solution Architecture
 I have opted to develop a Blazor WebAssembly Application using global interactivity to have a SPA (Single Page Application) structure with an Entity Framework Core Database set to use SQL Server.
-Testing uses an in-memory SQLLite database, this prevents the requirement of a second db while still maintaining relational data integrity.
+Testing uses xUnit with an in-memory SQLLite database, this prevents the requirement of a second db while still maintaining relational data integrity.
 
 I chose this for development as I am most comfortable with C# and Razor syntax, choosing the SPA structure enforces me to use a client side structure with API for demonstration of skills relating to API devlopment.
 
+The folder/project structure is as follows:
+```
+ROOT\
+	VehicleCategoryManager\
+		VehicleCategoryManager.csproj		-- Backend project to handle api requests
+		VehicleCategoryManager.Client.csproj	-- Client side code
+	VehicleCategoryManager.Persistance.csproj	-- Database models, context and access
+	VehicleCategoryManager.Tests.csproj		-- Unit tests for server side validation and database functionality
+```
 
 ## Database Design:
 The database consists of the following tables:
@@ -208,3 +222,4 @@ I chose this approach to ensure a more readable and user friendly experience whe
   - Server is also more secure against scripting and injection attacks as all code is stored and executed on the server, though more vulnerable to DoS attacks as it maintains an active connection with each client.
 - I have decided to use SVGs as my icons, this is due to the low file size and high scalability, it also gives me the option to copy the file and change colours so that I may have more icons without a large amount of additional work.
 - When performing smoke tests, I have added new tests where I have noticed issues, this reduces any gaps I may have during the inital test considerations while preventing repeats of the same errors.
+- If creating again, I would consider adding one additional project for shared logic where shared validation and code repeated between client and server would reside, reducing duplicated code and test coverage.

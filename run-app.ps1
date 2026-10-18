@@ -1,0 +1,1 @@
+dotnet run --project .\VehicleCategoryManager\VehicleCategoryManager\ -c Release --launch-profile http -- "--ConnectionStrings:DefaultConnection=$args"
