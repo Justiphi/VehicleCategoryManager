@@ -8,9 +8,14 @@
 
 <div class="d-flex justify-content-between align-items-center">
     <h1 class="mb-0">Weight Classes:</h1>
-    <button class="btn btn-primary" @onclick="OpenModal">
-        Add Weight Class
-    </button>
+    <div>
+        <button class="btn btn-primary" @onclick="LoadWeightClasses">
+            Refresh
+        </button>
+        <button class="btn btn-primary" @onclick="OpenModal">
+            Add Weight Class
+        </button>
+    </div>
 </div>
 @if (weightClasses == null)
 {
@@ -79,5 +84,5 @@ else
 }
 
 
-<AddWeightClassModal @ref="weightclassModal" @bind-IsOpen="isModalOpen" OnWeightClassAdded="LoadWeightClasses" />
+<AddWeightClassModal @ref="weightclassModal" @bind-IsOpen="isModalOpen" @bind-WeightClasses="weightClasses" OnWeightClassAdded="LoadWeightClasses" />
 <DeleteConfirmationModal @ref="deleteModal" @bind-IsOpen="isDeletionModalOpen" OnConfirmed="DeleteWeightClass" />

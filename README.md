@@ -159,6 +159,8 @@ I chose this approach to ensure a more readable and user friendly experience whe
 - No gaps or overlaps are allowed between categories, this is to ensure that all weights are accounted for and that no weight can be classified as more than one category.
 - When adding a new category, the user must specify the min and max values for the category, and the application will alter the boundaries of the adjacent categories.
 - If a new category is added that fully overlaps an existing category, validation will prevent the addition and display an error message.
+- There must always be a weight class with a minimum weight of 0 and a weight class with a maximum of Null. *(no limit)* 
+  - This ensures every vehicle is eligable for a weight class.
 
 
 ## Important Assumptions:
@@ -176,8 +178,10 @@ I chose this approach to ensure a more readable and user friendly experience whe
 - I have decided to use a query to get the classification of a vehicle instead of storing it against the vehicle. This is to ensure that if a category is changed, the classification of a vehicle will be updated automatically without requiring any additional processing.
 - A user may not delete the last remaining category, this is to ensure that there is always at least one category to classify vehicles against.
 - Categories will automatically expand or shrink to remove any gaps left by a deleted/altered category, this is to ensure that there are no gaps in the category boundaries. These changes are previewed to the user before being applied to ensure that they are aware of the changes being made.
-- For numeric weight inputs, steps are done in 100, this will make it easier when a user wants to use the buttons to alter weight.
+  - Due to this I have added more extensive client side validation, this will display what changes would happen to other weight classes while also warning if the change is expected to fail serverside validation.
 - Sorting is handled on client side, this is a faster experience for the user. On larger datasets where paging is required, this would be moved to server side to keep paging accurate.
+- All CRUD operations are done on single objects through modals, this provides a consistent experience while working with all 3 object types.
+  - Modals use a deep clone of the selected object created through serialization, this prevents changes in the model from showing on the grids if the selection is cancelled while also keeping a clean copy available for client side validation.
 
 ## Known Limitations:
 - To save on required validation of image links or storing images within the database, I have provided additional category icons for any additional custom icons. 
@@ -187,13 +191,14 @@ I chose this approach to ensure a more readable and user friendly experience whe
 - There is no way to differentiate a vehicle that has the same owner, weight, manufacturer and year, this could be solved by the inclusion of a number plate in the data structure.
 - There is a hard limit of 8 weight classes, this is due to the number of icons I have set up for this project, adding more icons is done by expanding the list in the IconPicker and adding a new svg to the icons folder on the client.
 - Due to no authentication, all visitors to the side can use CRUD operations on all records.
+- Pages will not update if left open while a change is made elsewhere, this could be accomplished by using the SignalR hub, or having polling. This feels unnecessary for the scope of the application.
 
 
 # Security Considerations:
 - At the time of submission, all referenced packages had been checked, no packages were listed as vulnerable through NuGet.
 - All database queries are parameterized through Entity Framework Core to prevent SQL Injection attacks.
 - Dto's are used to prevent overposting attacks, and only the required fields are sent to the API for processing.
-- Validation and automatic data correction happen server side to prevent scripting attacks.
+- Validation as well as any automatic data correction happen serverside before any database query is made.
 
 
 # Additional Notes:
@@ -202,4 +207,4 @@ I chose this approach to ensure a more readable and user friendly experience whe
   - This would simplify the application and not require an API endpoint as the web page is rendered entirely on the server before being sent to the client. 
   - Server is also more secure against scripting and injection attacks as all code is stored and executed on the server, though more vulnerable to DoS attacks as it maintains an active connection with each client.
 - I have decided to use SVGs as my icons, this is due to the low file size and high scalability, it also gives me the option to copy the file and change colours so that I may have more icons without a large amount of additional work.
-- When performing smoke tests, I have added new tests where I have noticed issues.
+- When performing smoke tests, I have added new tests where I have noticed issues, this reduces any gaps I may have during the inital test considerations while preventing repeats of the same errors.

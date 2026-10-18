@@ -54,7 +54,7 @@
                             <label for="minWeight" class="form-label">Min Weight (Kg)</label>
                             <InputNumber id="minWeight" class="form-control"
                                        @bind-Value="WeightClass.MinWeightKg"
-                                       @bind-Value:after="() => LimitDecimals(() => WeightClass.MinWeightKg,
+                                       @bind-Value:after="() => OnWeightEdit(() => WeightClass.MinWeightKg,
                                                      v => WeightClass.MinWeightKg = v ?? 0)" 
                                        min="0"/>
                             <ValidationMessage For="@(() => WeightClass.MinWeightKg)" />
@@ -64,12 +64,18 @@
                             <label for="maxWeight" class="form-label">Max Weight (Kg)</label>
                             <InputNumber id="maxWeight" class="form-control"
                                        @bind-Value="WeightClass.MaxWeightKg"
-                                       @bind-Value:after="() => LimitDecimals(() => WeightClass.MaxWeightKg,
+                                       @bind-Value:after="() => OnWeightEdit(() => WeightClass.MaxWeightKg,
                                                      v => WeightClass.MaxWeightKg = v)" 
                                        placeholder="Max"/>
                             <ValidationMessage For="@(() => WeightClass.MaxWeightKg)" />
                         </div>
-
+                        
+                        @if (!string.IsNullOrWhiteSpace(changeList))
+                        {
+                            <div class="alert @(changeProjectionValid ? "alert-warning" : "alert-danger")">
+                                <span style="white-space: pre-line;">@changeList</span>
+                            </div>
+                        }
                     </div>
 
                     <div class="modal-footer">
@@ -103,17 +109,25 @@
     [Parameter]
     public EventCallback OnWeightClassAdded { get; set; }
 
+    [Parameter]
+    public List<WeightClassDTO>? WeightClasses { get; set; } 
+    [Parameter]
+    public EventCallback<List<WeightClassDTO>> WeightClassesChanged { get; set; }
+
     public WeightClassDTO WeightClass { get; set; } = new();
 
     private bool isEditMode => WeightClass.VehicleWeightClassId > 0;
 
     private bool IsSaving;
     private string? errorMessage;
+    private string? changeList;
+    private bool changeProjectionValid = true;
 
     private async Task Submit()
     {
         IsSaving = true;
         errorMessage = null;
+        changeList = null;
 
         try
         {
@@ -152,23 +166,108 @@
         }
     }
 
-    private void LimitDecimals(Func<decimal?> getValue, Action<decimal?> setValue)
+    private void OnWeightEdit(Func<decimal?> getValue, Action<decimal?> setValue)
     {
         var value = getValue();
 
-        if (value.HasValue)
-            setValue(Math.Round(value.Value, 2));
+        if (value.HasValue) setValue(Math.Round(value.Value, 2));
+
+        ProjectChanges();
+    }
+
+    private void ProjectChanges()
+    {
+        List<string> changes = new();
+
+        if(WeightClasses == null)
+        {
+            changes.Add("Unable to calculate changes to other classes at this time.");
+            return;
+        }
+        changeProjectionValid = true;
+
+        //if id == 0 will default to the editing object
+        var classToCheckAgainst = WeightClasses.FirstOrDefault(wc => wc.VehicleWeightClassId == WeightClass.VehicleWeightClassId, WeightClass);
+        var classes = WeightClasses.Where(wc => wc.VehicleWeightClassId != WeightClass.VehicleWeightClassId).ToList();
+
+        WeightClassDTO? previousClass = null;
+        WeightClassDTO? nextClass = null;
+
+        if(classToCheckAgainst.MinWeightKg != 0)
+        { 
+            previousClass = classes.Where(wc => wc.MinWeightKg < classToCheckAgainst.MinWeightKg).OrderByDescending(wc => wc.MinWeightKg).FirstOrDefault();
+            if (previousClass != null)
+            {
+                changes.Add($"{previousClass.VehicleWeightClassName} maximum will become {WeightClass.MinWeightKg}kg.");
+            }
+        }
+
+        if(classToCheckAgainst.MaxWeightKg != null)
+        {
+            nextClass = classes.Where(wc => wc.MaxWeightKg > classToCheckAgainst.MaxWeightKg || wc.MaxWeightKg == null).OrderBy(wc => wc.MaxWeightKg == null).ThenBy(wc => wc.MaxWeightKg).FirstOrDefault();
+            if (nextClass != null)
+            {
+                changes.Add($"{nextClass.VehicleWeightClassName} minimum will become {(WeightClass.MaxWeightKg == null ? "max" : WeightClass.MaxWeightKg.ToString())}kg.");
+            }
+        }
+
+        if(WeightClass.MaxWeightKg < WeightClass.MinWeightKg)
+        {
+            changeList = "Max weight must be higher than Min Weight.";
+            changeProjectionValid = false;
+            return;
+        }
+
+        if(previousClass != null && nextClass != null)
+        {
+            if(!isEditMode && previousClass.MaxWeightKg != nextClass.MinWeightKg)
+            {
+                changeList = "Weight range cannot fully encompass another weight class.";
+                changeProjectionValid = false;
+                return;
+            }
+        }
+
+        if(isEditMode)
+        {
+            if(classToCheckAgainst.MinWeightKg == 0 && WeightClass.MinWeightKg != 0)
+            {
+                changeList = "Cannot alter lower limit of lowest weight class.";
+                changeProjectionValid = false;
+                return;
+            }
+
+            if(classToCheckAgainst.MaxWeightKg == null && WeightClass.MaxWeightKg != null)
+            {
+                changeList = "Cannot alter upper limit of highest weight class.";
+                changeProjectionValid = false;
+                return;
+            }
+
+            if(previousClass != null && WeightClass.MinWeightKg <= previousClass.MinWeightKg)
+            {
+                changeList = "Weight range cannot fully encompass another weight class.";
+                changeProjectionValid = false;
+                return;
+            }
+
+            if(nextClass != null && (WeightClass.MaxWeightKg >= nextClass.MaxWeightKg || WeightClass.MaxWeightKg == null))
+            {
+                changeList = "Weight range cannot fully encompass another weight class.";
+                changeProjectionValid = false;
+                return;
+            }
+        }
+
+        changeList = string.Join("\n", changes);
     }
 
     private async Task Close()
     {
         WeightClass = new();
-        if(isEditMode)
-        {
-            await OnWeightClassAdded.InvokeAsync();
-        }
         await IsOpenChanged.InvokeAsync(false);
         errorMessage = null;
+        changeList = null;
     }
 
 }

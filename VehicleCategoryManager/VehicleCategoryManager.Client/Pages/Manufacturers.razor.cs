@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Json;
+using System.Text.Json;
 using VehicleCategoryManager.Client.Components;
 using VehicleCategoryManager.Client.DTOs;
 
@@ -8,7 +9,7 @@ namespace VehicleCategoryManager.Client.Pages
     {
         private AddManufacturerModal? manufacturerModal { get; set; }
 
-        List<ManufacturerDTO> manufacturers = new();
+        private List<ManufacturerDTO> manufacturers = new();
 
         protected override async Task OnInitializedAsync()
         {
@@ -33,6 +34,16 @@ namespace VehicleCategoryManager.Client.Pages
         protected override async Task PromptDelete(int recordId)
         {
             var record = manufacturers.Find(v => v.ManufacturerId == recordId);
+            if(record == null)
+            {
+                errorMessage = "Unable to find manufacturer for deletion.";
+                return;
+            }
+            if (deleteModal == null)
+            {
+                errorMessage = "Deletion confirmation modal unavailable, please try refreshing the page.";
+                return;
+            }
             deleteModal.ConfirmationMessage = $"Are you sure you want to delete: {record.ManufacturerName}?";
 
             await base.PromptDelete(recordId);
@@ -59,7 +70,8 @@ namespace VehicleCategoryManager.Client.Pages
             errorMessage = null;
 
             if (manufacturers == null) return;
-            manufacturerModal?.Manufacturer = manufacturers.FirstOrDefault(m => m.ManufacturerId == manufacturerId, new());
+            var clone = JsonSerializer.Deserialize<ManufacturerDTO>(JsonSerializer.Serialize(manufacturers.FirstOrDefault(m => m.ManufacturerId == manufacturerId)));
+            manufacturerModal?.Manufacturer = clone ?? new();
             OpenModal();
         }
 

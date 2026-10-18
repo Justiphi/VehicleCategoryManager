@@ -179,6 +179,28 @@ namespace VehicleCategoryManager.Tests
         }
 
         [Fact]
+        public void UpdateWeightClass_WhenEditingLowest_CannotIncreaseMinimum()
+        {
+            var lightWeightClass = _weightClassService.GetWeightClassById(1);
+            Assert.NotNull(lightWeightClass);
+            lightWeightClass.MinWeightKg = 100;
+            Assert.ThrowsAny<InvalidDataException>(() =>
+                _weightClassService.UpdateWeightClass(lightWeightClass)
+            );
+        }
+
+        [Fact]
+        public void UpdateWeightClass_WhenEditinghighest_CannotSetMaximum()
+        {
+            var heavyWeightClass = _weightClassService.GetWeightClassById(3);
+            Assert.NotNull(heavyWeightClass);
+            heavyWeightClass.MaxWeightKg = 8000;
+            Assert.ThrowsAny<InvalidDataException>(() =>
+                _weightClassService.UpdateWeightClass(heavyWeightClass)
+            );
+        }
+
+        [Fact]
         public void AddWeightClass_WhenOnlyOneClassLeft_HasMinAndMax()
         {
             // Delete medium and heavy classes first

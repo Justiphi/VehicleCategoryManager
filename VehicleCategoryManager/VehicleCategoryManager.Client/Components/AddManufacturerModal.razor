@@ -127,10 +127,6 @@
     private async Task Close()
     {
         Manufacturer = new();
-        if(isEditMode)
-        {
-            await OnManufacturerAdded.InvokeAsync();
-        }
         await IsOpenChanged.InvokeAsync(false);
         errorMessage = null;
     }

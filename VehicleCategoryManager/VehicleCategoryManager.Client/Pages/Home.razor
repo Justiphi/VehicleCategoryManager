@@ -8,9 +8,14 @@
 
 <div class="d-flex justify-content-between align-items-center">
     <h1 class="mb-0">Vehicles:</h1>
-    <button class="btn btn-primary" @onclick="OpenModal">
-        Add Vehicle
-    </button>
+    <div>
+        <button class="btn btn-primary" @onclick="LoadVehicles">
+            Refresh
+        </button>
+        <button class="btn btn-primary" @onclick="OpenModal">
+            Add Vehicle
+        </button>
+    </div>
 </div>
 @if (vehicles == null)
 {

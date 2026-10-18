@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Json;
+using System.Text.Json;
 using VehicleCategoryManager.Client.Components;
 using VehicleCategoryManager.Client.DTOs;
 
@@ -8,7 +9,7 @@ namespace VehicleCategoryManager.Client.Pages
     {
         private AddWeightClassModal? weightclassModal { get; set; }
 
-        List<WeightClassDTO> weightClasses = new();
+        private List<WeightClassDTO> weightClasses = new();
 
         protected override async Task OnInitializedAsync()
         {
@@ -33,6 +34,16 @@ namespace VehicleCategoryManager.Client.Pages
         protected override async Task PromptDelete(int recordId)
         {
             var record = weightClasses.Find(v => v.VehicleWeightClassId == recordId);
+            if (record == null)
+            {
+                errorMessage = "Unable to find weight class for deletion.";
+                return;
+            }
+            if (deleteModal == null)
+            {
+                errorMessage = "Deletion confirmation modal unavailable, please try refreshing the page.";
+                return;
+            }
             deleteModal.ConfirmationMessage = $"Are you sure you want to delete: {record.VehicleWeightClassName}?\nThe surrounding records will expand to fill the gap.";
 
             await base.PromptDelete(recordId);
@@ -59,7 +70,8 @@ namespace VehicleCategoryManager.Client.Pages
             errorMessage = null;
 
             if (weightClasses == null) return;
-            weightclassModal?.WeightClass = weightClasses.FirstOrDefault(wc => wc.VehicleWeightClassId == weightClassId, new());
+            var clone = JsonSerializer.Deserialize<WeightClassDTO>(JsonSerializer.Serialize(weightClasses.FirstOrDefault(wc => wc.VehicleWeightClassId == weightClassId)));
+            weightclassModal?.WeightClass = clone ?? new();
             OpenModal();
         }
 

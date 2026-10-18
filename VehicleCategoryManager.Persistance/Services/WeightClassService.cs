@@ -90,6 +90,64 @@ namespace VehicleCategoryManager.Persistance.Services
             return true;
         }
 
+        /// <summary>
+        /// Validates changes to the weight class against the current weight class.
+        /// </summary>
+        /// <param name="context">Data context</param>
+        /// <param name="weightClass">Weight class with updates</param>
+        /// <param name="weightClassInstanced">Weight class as it is in the db</param>
+        /// <returns></returns>
+        /// <exception cref="InvalidDataException"></exception>
+        private bool ValidateWeightClassForEdit(DataContext context, VehicleWeightClass weightClass, VehicleWeightClass weightClassInstanced)
+        {
+            List<string> errorList = new();
+
+            //ensure we are not removing maximum
+            if (weightClassInstanced.MaxWeightKg == null && weightClass.MaxWeightKg != null)
+            {
+                errorList.Add("Cannot Update: Cannot limit upper value of highest class.");
+            }
+
+            //ensure we are not removing minimum
+            if (weightClassInstanced.MinWeightKg == 0 && weightClass.MinWeightKg != 0)
+            {
+                errorList.Add("Cannot Update: Cannot be left without a class that has minimum weight of 0.");
+            }
+
+            var classes = context.VehicleWeightClasses.Where(wc => wc.VehicleWeightClassId != weightClass.VehicleWeightClassId);
+
+            if (weightClass.MinWeightKg != 0)
+            {
+                var previousClass = classes.Where(wc => wc.MinWeightKg < weightClassInstanced.MinWeightKg).OrderByDescending(wc => wc.MinWeightKg).FirstOrDefault();
+                if (previousClass != null)
+                {
+                    if(weightClass.MinWeightKg <= previousClass.MinWeightKg)
+                    {
+                        errorList.Add("Cannot Update: new minimum must be higher than previous weight classes minimum.");
+                    }
+                }
+            }
+
+            if (weightClass.MaxWeightKg != null)
+            {
+                var nextClass = classes.Where(wc => wc.MaxWeightKg > weightClassInstanced.MaxWeightKg || wc.MaxWeightKg == null).OrderBy(wc => wc.MaxWeightKg == null).ThenBy(wc => wc.MaxWeightKg).FirstOrDefault();
+                if (nextClass?.MaxWeightKg != null) 
+                {
+                    if (weightClass.MaxWeightKg >= nextClass.MaxWeightKg)
+                    {
+                        errorList.Add("Cannot Update: new maximum must be lower than next weight classes maximum.");
+                    }
+                }
+            }
+
+            if (errorList.Any())
+            {
+                throw new InvalidDataException(string.Join(" \n", errorList));
+            }
+
+            return true;
+        }
+
         public int AddWeightClass(VehicleWeightClass weightClass)
         {
             using (var context = _contextFactory.CreateContext())
@@ -111,8 +169,6 @@ namespace VehicleCategoryManager.Persistance.Services
 
         public bool UpdateWeightClass(VehicleWeightClass weightClass)
         {
-            VehicleWeightClass? weightClassInstanced = null;
-
             using (var context = _contextFactory.CreateContext())
             {
 
@@ -121,28 +177,15 @@ namespace VehicleCategoryManager.Persistance.Services
                     return false;
                 }
 
-                weightClassInstanced = context.VehicleWeightClasses.Find(weightClass.VehicleWeightClassId);
-                if(weightClassInstanced == null)
+                var weightClassInstanced = context.VehicleWeightClasses.Find(weightClass.VehicleWeightClassId);
+                if (weightClassInstanced == null)
                 {
                     throw new InvalidDataException("Cannot Update: Cannot find Weight Class.");
                 }
 
-                //ensure we are not removing maximum
-                if(weightClassInstanced.MaxWeightKg == null && weightClass.MaxWeightKg != null)
+                if (!ValidateWeightClassForEdit(context, weightClass, weightClassInstanced))
                 {
-                    throw new InvalidDataException("Cannot Update: Cannot limit upper value of highest class.");
-                }
-
-                //ensure we are not removing minimum
-                if(weightClassInstanced.MinWeightKg == 0 && weightClass.MinWeightKg != 0)
-                {
-                    throw new InvalidDataException("Cannot Update: Cannot be left without a class that has minimum weight of 0.");
-                }
-
-                //ensure record exists before updating
-                if (weightClassInstanced == null)
-                {
-                    throw new InvalidDataException("Cannot Update: Weight class not found.");
+                    return false;
                 }
 
                 weightClassInstanced.VehicleWeightClassName = weightClass.VehicleWeightClassName;

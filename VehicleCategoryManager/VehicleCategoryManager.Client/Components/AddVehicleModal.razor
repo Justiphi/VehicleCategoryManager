@@ -177,10 +177,6 @@
     private async Task Close()
     {
         Vehicle = new();
-        if(isEditMode)
-        {
-            await OnVehicleAdded.InvokeAsync();
-        }
         await IsOpenChanged.InvokeAsync(false);
         errorMessage = null;
     }

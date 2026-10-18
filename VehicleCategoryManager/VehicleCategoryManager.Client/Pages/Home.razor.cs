@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Json;
+using System.Text.Json;
 using VehicleCategoryManager.Client.Components;
 using VehicleCategoryManager.Client.DTOs;
 
@@ -8,7 +9,7 @@ namespace VehicleCategoryManager.Client.Pages
     {
         private AddVehicleModal? vehicleModal { get; set; }
 
-        List<VehicleDTO> vehicles = new();
+        private List<VehicleDTO> vehicles = new();
 
         protected override async Task OnInitializedAsync()
         {
@@ -51,7 +52,8 @@ namespace VehicleCategoryManager.Client.Pages
             errorMessage = null;
 
             if (vehicles == null) return;
-            vehicleModal?.Vehicle = vehicles.FirstOrDefault(v => v.VehicleId == vehicleId, new());
+            var clone = JsonSerializer.Deserialize<VehicleDTO>(JsonSerializer.Serialize(vehicles.FirstOrDefault(v => v.VehicleId == vehicleId)));
+            vehicleModal?.Vehicle = clone ?? new();
             OpenModal();
         }
 
